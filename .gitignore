@@ -1,0 +1,28 @@
+# Quarto / render artifacts
+.quarto/
+/Course File/
+/*.tex
+/GcetCourseFile.cls
+*.docx
+site_libs/
+_metadata.yml
+**/*.quarto_ipynb
+
+# Excel lock/temp files
+~$*.xlsx
+~$*.xlsm
+~$*.xls
+
+# Node tooling (tools/dump_outline.js) — reinstall with `npm install` in tools/
+tools/node_modules/
+
+# R session files
+.Rhistory
+.RData
+.Rproj.user/
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+
+/.quarto/

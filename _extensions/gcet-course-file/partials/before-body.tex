@@ -1,0 +1,85 @@
+\begin{titlepage}
+\thispagestyle{empty}
+\phantomsection\label{gcet-cover-page}
+\begin{center}
+
+\setlength{\parskip}{0pt}
+\setlength{\parindent}{0pt}
+
+$if(coursefile.institution-group)$
+{\fontsize{18pt}{22pt}\selectfont \bfseries \MakeUppercase{\cfInstitutionGroup}\par}
+\vspace{2mm}
+{\fontsize{18pt}{20pt}\selectfont \bfseries (\cfInstitution)\par}
+$else$
+{\fontsize{18pt}{20pt}\selectfont \bfseries \cfInstitution\par}
+$endif$
+
+$if(coursefile.institution-address)$
+\vspace{1.5mm}
+{\fontsize{13pt}{16pt}\selectfont \cfInstitutionAddress \par}
+$endif$
+
+\vspace{12mm}
+{\fontsize{18pt}{22pt}\selectfont \bfseries \underline{COURSE FILE}\par}
+
+\vspace{12mm}
+$if(coursefile.logo)$
+\includegraphics[height=2.25in]{\cfLogo}\\[3.5mm]
+$endif$
+
+\vfill
+
+$if(coursefile.subject-name)$
+\vspace{2mm}
+$if(coursefile.programme)$
+{\fontsize{14pt}{17pt}\selectfont \parbox{0.92\textwidth}{\centering \textbf{\MakeUppercase{\cfProgramme}}}\par}
+\vspace{1.5mm}
+$endif$
+{\fontsize{14pt}{17pt}\selectfont \parbox{0.92\textwidth}{\centering \cfSubjectName$if(coursefile.course-code)$\hspace{0.25em}-\hspace{0.25em}\MakeUppercase{\cfCourseCode}$endif$}\par}
+$else$
+$if(coursefile.course-code)$
+\vspace{3mm}
+{\fontsize{13pt}{16pt}\selectfont \parbox{0.92\textwidth}{\centering \MakeUppercase{\cfCourseCode}}\par}
+$endif$
+$endif$
+
+$if(coursefile.academic-session)$
+\vspace{3mm}
+{\fontsize{13pt}{16pt}\selectfont \parbox{0.92\textwidth}{\centering \textbf{SESSION:} \MakeUppercase{\cfSession}}\par}
+$endif$
+
+$if(coursefile.semester)$
+\vspace{1.5mm}
+{\fontsize{13pt}{16pt}\selectfont \parbox{0.92\textwidth}{\centering \textbf{SEMESTER:} \MakeUppercase{\cfSemester}}\par}
+$endif$
+
+$if(coursefile.faculty-name)$
+\vfill
+{\fontsize{12pt}{15pt}\selectfont \parbox{0.92\textwidth}{\centering \textbf{\MakeUppercase{\cfFacultyName}}}\par}
+$endif$
+
+$if(coursefile.faculty-designation)$
+\vspace{2mm}
+{\fontsize{12pt}{15pt}\selectfont \parbox{0.92\textwidth}{\centering \textbf{\MakeUppercase{\cfFacultyDesignation}}}\par}
+$endif$
+\vfill
+\vspace{4mm}
+{\fontsize{12pt}{15pt}\selectfont \parbox{0.92\textwidth}{\centering \MakeUppercase{\cfDepartment}}\par}
+
+% \vfill
+
+% $if(book.subtitle)$
+% {\fontsize{12pt}{14pt}\selectfont \textit{\cfSubtitle}\par}
+% $endif$
+
+\end{center}
+\end{titlepage}
+
+\addtocontents{toc}{\protect\contentsline{chapter}{\protect\numberline{1}Cover Page}{\thepage}{gcet-cover-page}}
+
+\frontmatter
+\pagestyle{plain}
+
+\mainmatter
+\setcounter{chapter}{2}
+\pagestyle{fancy}
