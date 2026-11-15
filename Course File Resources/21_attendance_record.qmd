@@ -1,0 +1,49 @@
+---
+title: "Attendance Record"
+---
+
+```{r}
+#| label: attendance-record-images
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+
+# Folder located alongside this QMD file
+chapter_dir <- dirname(knitr::current_input(dir = TRUE))
+image_dir <- file.path(chapter_dir, "21_attendance_record")
+
+# Find attendance-record images
+images <- list.files(
+  image_dir,
+  pattern = "\\.(png|jpg|jpeg)$",
+  full.names = TRUE,
+  ignore.case = TRUE
+)
+
+# Sort images by filename
+images <- sort(images)
+
+if (length(images) == 0L) {
+  cat("*No attendance-record images found.*\n\n")
+} else {
+  for (image in images) {
+    image_path <- normalizePath(image, winslash = "/")
+
+    # Use a path relative to the QMD directory
+    relative_path <- file.path(
+      "21_attendance_record",
+      basename(image_path)
+    )
+    relative_path <- gsub("\\\\", "/", relative_path)
+
+    # Insert image without a caption
+    cat(
+      "![](<", relative_path, ">){width=95%}\n\n",
+      sep = ""
+    )
+  }
+}
+```

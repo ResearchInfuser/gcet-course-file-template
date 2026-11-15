@@ -1,0 +1,89 @@
+---
+title: "Sample Evaluated Answer Sheets (All Tests), Assignments/Quizzes (Minimum One Best, One Average and One Poor Each)"
+---
+
+```{r}
+#| label: sample-evaluated-sheets
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+
+chapter_dir <- dirname(knitr::current_input(dir = TRUE))
+evidence_dir <- file.path(chapter_dir, "22_sample_evaluated_sheets")
+
+categories <- c(
+  "1.best" = "Best",
+  "2.average" = "Average",
+  "3.poor" = "Poor"
+)
+
+exams <- c("CAE-I", "CAE-II", "PUT")
+
+for (category in names(categories)) {
+
+  cat(
+    "\n\n### ", categories[[category]],
+    " Evaluated Answer Sheets {.unnumbered}\n\n",
+    sep = ""
+  )
+
+  for (exam in exams) {
+
+    exam_dir <- file.path(evidence_dir, category, exam)
+
+    if (!dir.exists(exam_dir)) next
+
+    images <- list.files(
+      exam_dir,
+      pattern = "\\.(png|jpg|jpeg)$",
+      full.names = TRUE,
+      recursive = TRUE,
+      ignore.case = TRUE
+    )
+
+    if (length(images) == 0L) next
+
+    # Natural ordering: 1.png, 2.png, 10.png
+    filenames <- basename(images)
+    numbers <- suppressWarnings(
+      as.integer(sub("^([0-9]+).*", "\\1", filenames))
+    )
+    images <- images[
+      order(is.na(numbers), numbers, tolower(filenames))
+    ]
+
+    cat(
+      "\n\n#### ", exam,
+      " {.unnumbered}\n\n",
+      sep = ""
+    )
+
+    for (image in images) {
+
+      relative_image <- file.path(
+        "22_sample_evaluated_sheets",
+        category,
+        exam,
+        substring(
+          image,
+          nchar(exam_dir) + 2L
+        )
+      )
+
+      relative_image <- gsub(
+        "\\\\", "/", relative_image
+      )
+
+      # No image caption
+      cat(
+        "![](<", relative_image,
+        ">){width=95%}\n\n",
+        sep = ""
+      )
+    }
+  }
+}
+```

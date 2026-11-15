@@ -1,0 +1,42 @@
+---
+title: "PUT / Sessional Question Paper"
+---
+
+### PUT Attendance & Marks Record {.unnumbered}
+
+The table below is read live from the `Register` sheet of the workbook.
+
+```{r}
+#| label: put-marks-record
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+library(kableExtra)
+
+source(file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"))
+
+register_df <- read_workbook_sheet(cf_sheet("register"))
+
+if (is.null(register_df)) {
+	notify_workbook_missing()
+} else {
+	register_df <- as.data.frame(register_df)
+	render_register_table(
+		register_df,
+		keys = c("serial_no", "student_name", "put_attendance", "put_marks"),
+		labels = c("S. No.", "Student Name", "PUT Attendance", "PUT Marks"),
+		col_widths = c("0.40in", "2.80in")
+	)
+}
+```
+
+### PUT / Sessional Question Paper {.unnumbered}
+
+_Attach/paste the PUT / sessional question paper here._
+
+### PUT / Sessional Model Solution {.unnumbered}
+
+_Attach/paste the PUT / sessional model solution here._

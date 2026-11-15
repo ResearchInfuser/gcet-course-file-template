@@ -1,0 +1,47 @@
+---
+title: "Department Vision & Mission, PEOs, POs & PSOs"
+---
+
+```{r}
+#| label: department-vision-mission-content
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+source(file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"))
+
+dvm_df <- read_workbook_sheet(cf_sheet("department_vision_mission"))
+
+if (is.null(dvm_df)) {
+	notify_workbook_missing()
+} else {
+	extract_items <- function(col) {
+		values <- trimws(as.character(col))
+		values[!is.na(values) & nzchar(values)]
+	}
+
+	vision_items <- extract_items(dvm_df[[1]])
+	mission_items <- extract_items(dvm_df[[2]])
+	peo_items <- extract_items(dvm_df[[3]])
+	po_items <- extract_items(dvm_df[[4]])
+
+	cat("### Vision of the Department {.unnumbered}\n\n")
+	cat(vision_items[1], "\n\n")
+
+	cat("### Mission of the Department {.unnumbered}\n\n")
+	for (item in mission_items) cat("- ", item, "\n", sep = "")
+	cat("\n")
+
+	cat("### Programme Educational Objectives (PEOs) {.unnumbered}\n\n")
+	for (item in peo_items) cat("- ", item, "\n", sep = "")
+	cat("\n")
+
+	cat("### Programme Outcomes (POs) {.unnumbered}\n\n")
+	for (item in po_items) cat("- ", item, "\n", sep = "")
+	cat("\n")
+
+	# cat("### Programme Specific Outcomes (PSOs) {.unnumbered}\n\n")
+	# cat("_PSOs are not captured in the workbook yet; add them to the `5.Deptt_Vision_&_Mission` sheet or edit this section directly._\n")
+}
+```

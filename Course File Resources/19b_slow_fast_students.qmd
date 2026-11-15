@@ -1,0 +1,189 @@
+## Students List of Slow Learners and Fast Learners {.unnumbered}
+
+```{r}
+#| label: slow-fast-student-classification
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+
+# Schema/workbook functions only; no separate table helper.
+if (!exists("read_workbook_sheet", mode = "function") ||
+    !exists("cf_sheet", mode = "function")) {
+  candidates <- c(
+    "Course File Resources/_data_helpers.R",
+    "_data_helpers.R",
+    "../_data_helpers.R",
+    "Course File Resources/_data_helpers_schema_only.R",
+    "_data_helpers_schema_only.R",
+    "../_data_helpers_schema_only.R"
+  )
+  found <- candidates[file.exists(candidates)]
+  if (!length(found)) stop("Cannot find the schema/workbook helper file.")
+  source(found[1])
+}
+
+# Read the actual first two Excel rows, including the second-row 'Status'
+# header. readxl's default header reading would otherwise hide that row.
+raw <- read_workbook_sheet(cf_sheet("register"), col_names = FALSE)
+
+if (is.null(raw)) {
+  notify_workbook_missing()
+} else {
+  raw <- as.data.frame(raw, check.names = FALSE)
+  if (nrow(raw) < 3L) stop("Register must contain headers, Status row and student data.")
+
+  clean <- function(x) {
+    y <- trimws(gsub("[[:space:]]+", " ", as.character(x)))
+    y[is.na(x)] <- ""
+    y
+  }
+  first_header <- clean(unlist(raw[1, ], use.names = FALSE))
+  second_header <- clean(unlist(raw[2, ], use.names = FALSE))
+
+  # Resolve column names from the configured Register schema, not positions.
+  reg_schema <- get_schema()$register_columns
+  col_index <- function(key) {
+    configured <- reg_schema[[key]]
+    if (is.null(configured)) stop("Missing register_columns schema key: ", key)
+    match(clean(configured), first_header)
+  }
+  # Only the student name and optional section are needed for the report.
+  name_idx <- col_index("student_name")
+  section_idx <- col_index("section")
+  if (is.na(name_idx)) stop("Student Name header not found in Register.")
+
+  status_idx <- which(tolower(second_header) == "status")
+  if (length(status_idx) != 1L) {
+    stop("Expected exactly one 'Status' cell in the Register's second header row; found ",
+         length(status_idx), ".")
+  }
+
+  rows <- raw[-c(1, 2), , drop = FALSE]
+  field <- function(i) {
+    x <- clean(rows[[i]])
+    x[is.na(x) | tolower(x) %in% c("na", "n/a")] <- ""
+    x
+  }
+  status <- field(status_idx)
+  names(status) <- NULL
+  status <- tolower(status)
+
+  students <- data.frame(
+    `Student Name` = field(name_idx),
+    Status = ifelse(status == "weak", "Weak",
+                    ifelse(status == "bright", "Bright", "")),
+    check.names = FALSE, stringsAsFactors = FALSE
+  )
+
+  # Show section only when it is a separate column from Status.
+  if (!is.na(section_idx) && section_idx != status_idx) {
+    students[["Branch / Section"]] <- field(section_idx)
+  }
+
+  students <- students[nzchar(students[["Student Name"]]), , drop = FALSE]
+  rownames(students) <- NULL
+
+  # Re-number each category from 1, independent of Register serial numbers.
+  prepare_list <- function(df) {
+    df$Status <- NULL
+    df <- df[, c("Student Name", setdiff(names(df), "Student Name")), drop = FALSE]
+    data.frame(`S. No.` = seq_len(nrow(df)), df,
+               check.names = FALSE, row.names = NULL)
+  }
+
+  render_list <- function(df) {
+    if (!nrow(df)) {
+      cat("_No students recorded with this status._\n\n")
+      return(invisible(NULL))
+    }
+    if (knitr::is_latex_output()) {
+      # longtable is non-floating and stays below its section heading.
+      tab <- kableExtra::kbl(
+        df, format = "latex", booktabs = TRUE, longtable = TRUE,
+        row.names = FALSE, align = c("c", rep("l", ncol(df) - 1L))
+      ) |>
+        kableExtra::kable_styling(
+          latex_options = "repeat_header",
+          font_size = 9, full_width = FALSE
+        )
+      # Explicit row shading is more reliable than the striped option
+      # for longtable in some PDF templates.
+      even_rows <- seq.int(2L, nrow(df), by = 2L)
+      if (length(even_rows)) {
+        tab <- kableExtra::row_spec(tab, even_rows, background = "gray!12")
+      }
+      cat("\n", as.character(tab), "\n\n", sep = "")
+    } else if (knitr::pandoc_to("docx")) {
+      ft <- flextable::flextable(df) |>
+        flextable::theme_booktabs() |>
+        flextable::bold(part = "header") |>
+        flextable::bg(part = "header", bg = "#E9EDF2") |>
+        flextable::fontsize(size = 9, part = "all") |>
+        flextable::autofit()
+      even_rows <- seq.int(2L, nrow(df), by = 2L)
+      if (length(even_rows)) {
+        ft <- flextable::bg(ft, i = even_rows, bg = "#F0F0F0", part = "body")
+      }
+      ft <- flextable::set_table_properties(
+        ft, layout = "autofit", opts_word = list(repeat_headers = TRUE)
+      )
+      flextable::flextable_to_rmd(ft)
+    } else if (knitr::is_html_output()) {
+      tab <- kableExtra::kbl(df, format = "html", row.names = FALSE) |>
+        kableExtra::kable_styling(
+          bootstrap_options = c("bordered", "condensed"),
+          full_width = FALSE
+        )
+      even_rows <- seq.int(2L, nrow(df), by = 2L)
+      if (length(even_rows)) {
+        tab <- kableExtra::row_spec(tab, even_rows, background = "#F0F0F0")
+      }
+      cat(as.character(tab), "\n\n", sep = "")
+    } else {
+      cat(knitr::kable(df), "\n\n", sep = "")
+    }
+    invisible(NULL)
+  }
+
+  slow <- students[students$Status == "Weak", , drop = FALSE]
+  fast <- students[students$Status == "Bright", , drop = FALSE]
+
+  cat("#### Slow Learners {.unnumbered}\n\n")
+  cat("**Total slow learners identified:** ", nrow(slow), "\n\n", sep = "")
+  render_list(prepare_list(slow))
+
+  cat("\n\n#### Fast Learners {.unnumbered}\n\n")
+  cat("**Total fast learners identified:** ", nrow(fast), "\n\n", sep = "")
+  render_list(prepare_list(fast))
+}
+```
+
+
+### Action Taken to Improve Performance of Slow Learners {.unnumbered}
+
+#### 1. Individualized Learning Plans {.unnumbered}
+
+- **Personalized Instruction:** Lessons are tailored to individual learning needs and pace. Topics where students demonstrate weaknesses in Continuous Assessment Examinations (CAE) or class tests are revisited using simplified explanations, additional worked examples, and targeted exercises.
+- **Additional Tutorials:** Remedial classes and individual mentoring sessions are organized to address specific learning difficulties identified through performance analysis. Students are encouraged to seek clarification during faculty consultation hours.
+
+#### 2. Use of Technology and Online Resources {.unnumbered}
+
+- **E-Learning Platforms:** Relevant online courses, tutorials, and interactive learning resources, including NPTEL, educational videos, and official documentation, are recommended to strengthen understanding of topics associated with underachieved Course Outcomes (COs).
+- **Multimedia Resources:** Video demonstrations, visual explanations, simulations, and interactive content are incorporated to simplify complex concepts and improve conceptual understanding.
+
+
+#### 3. Peer-Assisted and Collaborative Learning {.unnumbered}
+
+- **Peer Mentoring:** Students requiring additional academic support are paired with academically proficient peers for collaborative learning, concept clarification, and guided problem-solving.
+- **Small-Group Discussions:** Structured group activities encourage students to discuss difficult topics, exchange ideas, and develop confidence through active participation.
+- **Collaborative Practical Exercises:** Students work in small groups on guided laboratory tasks to strengthen technical understanding and practical skills.
+
+#### 4. Continuous Assessment and Constructive Feedback {.unnumbered}
+
+- **Frequent Formative Assessments:** Short quizzes, topic-specific tests, and practice assignments are conducted to evaluate conceptual understanding and identify persistent learning gaps.
+- **Individual Performance Feedback:** Students receive constructive feedback highlighting specific areas requiring improvement, common mistakes, and recommended corrective actions.
+- **Progress Monitoring:** Student performance is periodically reviewed using assessment results, assignment submissions, classroom participation, and attainment of relevant Course Outcomes.
+

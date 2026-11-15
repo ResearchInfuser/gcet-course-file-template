@@ -1,0 +1,9 @@
+---
+title: "Slow & Fast Learners Record with Improvement Measures"
+---
+
+{{< include "19a_slow_fast_criteria.qmd" >}}
+
+{{< include "19b_slow_fast_students.qmd" >}}
+
+{{< signature >}}

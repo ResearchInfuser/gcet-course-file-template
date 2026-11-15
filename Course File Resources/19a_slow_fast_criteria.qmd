@@ -1,0 +1,173 @@
+### Criteria for Identification of Slow/Fast Learners {.unnumbered}
+
+```{r}
+#| label: slow-fast-criteria-table
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+
+criteria_df <- data.frame(
+    "S. No." = c("1", "1", "2", "2"),
+    "Type" = c(
+        "Weak Students",
+        "Weak Students",
+        "Bright Students",
+        "Bright Students"
+    ),
+    "Dept" = c(
+        "First Year",
+        "Dept",
+        "First Year",
+        "Dept"
+    ),
+    "For All Programs / Courses – Odd Sem" = c(
+        "On the basis of students' PCM / performance in Assessment Test / CAE-I (say - 40% or less)",
+        "Having either Back Paper or SGPA < 6 in Univ. End Sem Result (till previous semester) or having CT marks (say <60%) of all the theory subjects of missing semester (AKTU Result Not available)",
+        "On the basis of students' PCM / performance in Assessment Test / CAE-I (say - 75% or more)",
+        "Having NO Back Paper and SGPA > 8 in latest available Univ. End Sem Result (Sem / Session)"
+    ),
+    "For All Programs / Courses – Even Sem" = c(
+        "Having either Back Paper or SGPA < 6 in University End Sem Result of Sem-I",
+        "",
+        "Having NO Back Paper and SGPA > 8 in University End Sem Result (Sem-I)",
+        ""
+    ),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+)
+
+# Common dimensions (inches)
+table_widths <- c(0.45, 0.85, 0.65, 1.95, 1.95)
+
+if (knitr::pandoc_to("docx")) {
+
+    library(flextable)
+
+    tbl <- flextable(criteria_df) |>
+        theme_booktabs() |>
+        merge_v(j = c("S. No.", "Type"), part = "body") |>
+        valign(valign = "center", part = "all") |>
+        bold(part = "header") |>
+        fontsize(size = 9, part = "all") |>
+        padding(padding = 4, part = "all") |>
+        align(
+            j = 1:3,
+            align = "center",
+            part = "all"
+        ) |>
+        align(
+            j = 4:5,
+            align = "left",
+            part = "all"
+        ) |>
+        set_table_properties(
+            layout = "fixed",
+            opts_word = list(
+                repeat_headers = TRUE,
+                split = FALSE
+            )
+        )
+
+    for (j in seq_along(table_widths)) {
+        tbl <- flextable::width(
+            tbl,
+            j = j,
+            width = table_widths[j]
+        )
+    }
+
+    # Emit Word-compatible table markup
+    flextable::flextable_to_rmd(tbl)
+
+} else if (knitr::is_latex_output()) {
+
+    library(kableExtra)
+
+    tbl <- kbl(
+        criteria_df,
+        format = "latex",
+        booktabs = TRUE,
+        longtable = FALSE,
+        align = c("c", "c", "c", "l", "l")
+    ) |>
+        kable_styling(
+            latex_options = "hold_position",
+            font_size = 9,
+            full_width = FALSE
+        ) |>
+        column_spec(1, width = "0.45in") |>
+        column_spec(2, width = "0.85in") |>
+        column_spec(3, width = "0.65in") |>
+        column_spec(4, width = "1.95in") |>
+        column_spec(5, width = "1.95in") |>
+        collapse_rows(
+            columns = c(1, 2),
+            valign = "middle"
+        )
+
+    cat(as.character(tbl), "\n", sep = "")
+
+} else {
+
+    library(kableExtra)
+
+    tbl <- kbl(
+        criteria_df,
+        format = "html",
+        escape = TRUE,
+        align = c("c", "c", "c", "l", "l")
+    ) |>
+        kable_styling(
+            bootstrap_options = c(
+                "striped",
+                "bordered",
+                "hover",
+                "condensed"
+            ),
+            full_width = FALSE
+        ) |>
+        collapse_rows(
+            columns = c(1, 2),
+            valign = "middle"
+        )
+
+    cat(as.character(tbl), "\n", sep = "")
+}
+```
+
+### Action Taken for Academic Improvement of Slow and Fast Learners {.unnumbered}
+
+#### A. Suggested Actions for Weak Students / Slow Learners {.unnumbered}
+
+The following measures are recommended to improve the academic performance of weak students / slow learners:
+
+a. Conduct revision and doubt-clearing classes.
+
+b. Discuss the basic concepts and fundamentals of the respective subjects/courses.
+
+c. Solve difficult questions from previous University (AKTU) End-Semester Examination question papers.
+
+d. Revise important previously taught concepts for 3–5 minutes at the beginning or end of each lecture.
+
+e. Provide assistance in understanding technical terminology and subject-specific vocabulary.
+
+f. Conduct periodic revision tests to assess learning progress.
+
+g. Implement any additional remedial measures as decided by the respective department or course teacher.
+
+#### B. Suggested Actions for Bright Students / Fast Learners {.unnumbered}
+
+The following enrichment measures are recommended to further enhance the academic performance of bright students / fast learners:
+
+a. Encourage students to solve the complete course question bank.
+
+b. Assign challenging questions from previous University (AKTU) End-Semester Examination question papers.
+
+c. Provide additional practice questions and advanced problem-solving exercises.
+
+d. Assign selected questions from competitive examinations, such as GATE, relevant to the respective course.
+
+e. Implement any additional enrichment activities as decided by the respective department or course teacher.

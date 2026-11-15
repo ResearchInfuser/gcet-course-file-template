@@ -1,0 +1,33 @@
+---
+title: "Institute Vision & Mission"
+---
+
+```{r}
+#| label: institute-vision-mission-content
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+source(file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"))
+
+vm_df <- read_workbook_sheet(cf_sheet("institute_vision_mission"))
+
+if (is.null(vm_df)) {
+	notify_workbook_missing()
+} else {
+	vision_col <- trimws(as.character(vm_df[[1]]))
+	mission_col <- trimws(as.character(vm_df[[2]]))
+
+	vision_text <- vision_col[!is.na(vision_col) & nzchar(vision_col)][1]
+	mission_items <- mission_col[!is.na(mission_col) & nzchar(mission_col)]
+
+	cat("### Vision of the Institute {.unnumbered}\n\n")
+	cat(vision_text, "\n\n")
+
+	cat("### Mission of the Institute {.unnumbered}\n\n")
+	for (item in mission_items) {
+		cat("- ", item, "\n", sep = "")
+	}
+}
+```

@@ -1,0 +1,655 @@
+---
+title: "Student Feedback, Course Exit Survey & Action Taken"
+---
+
+```{r}
+#| label: student-feedback-survey
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+# Locate the QMD directory
+chapter_dir <- dirname(knitr::current_input(dir = TRUE))
+
+# Load GCET helper functions
+source(file.path(chapter_dir, "_data_helpers.R"))
+
+# Feedback folder alongside the QMD
+root <- file.path(chapter_dir, "24_student_feedback_survey")
+
+# File-to-heading mapping
+sections <- c(
+  "1.png" = "Student Feedback",
+  "2.png" = "Course Exit Survey"
+)
+
+for (file_name in names(sections)) {
+
+  cat("## ", sections[[file_name]], "\n\n", sep = "")
+
+  file <- file.path(root, file_name)
+
+  if (file.exists(file)) {
+
+    # Use a path relative to the QMD directory (an absolute path breaks
+    # the PDF build, as Quarto prefixes it with the chapter folder).
+    path <- file.path("24_student_feedback_survey", file_name)
+
+    cat(
+      "![](<", path, ">){width=95%}\n\n",
+      sep = ""
+    )
+
+  } else {
+
+    cat("*Survey image not available.*\n\n")
+  }
+}
+```
+
+
+```{r}
+#| label: activity-evidence-sheet
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(xml2)
+library(knitr)
+
+# ============================================================
+# 1. PROJECT CONFIGURATION
+# ============================================================
+
+chapter_dir <- dirname(
+  normalizePath(
+    knitr::current_input(dir = TRUE),
+    winslash = "/",
+    mustWork = TRUE
+  )
+)
+
+helper_candidates <- c(
+  file.path(chapter_dir, "_data_helpers.R"),
+  file.path(chapter_dir, "..", "_data_helpers.R")
+)
+
+helper_file <- helper_candidates[file.exists(helper_candidates)]
+
+if (!length(helper_file)) {
+  stop("Cannot locate _data_helpers.R")
+}
+
+source(helper_file[[1]])
+
+evidence_root <- normalizePath(
+  file.path(chapter_dir, "20_innovative_tl_practices"),
+  winslash = "/",
+  mustWork = TRUE
+)
+
+workbook <- normalizePath(
+  get_workbook_path(),
+  winslash = "/",
+  mustWork = TRUE
+)
+
+# Lesson Plan columns
+lecture_col  <- 1L
+topic_col    <- 4L
+activity_col <- 6L
+date_col     <- 8L
+
+sheet_name <- cf_sheet("lesson_plan")
+range_name <- cf_range("lesson_plan")
+
+# ============================================================
+# 2. READ LESSON PLAN
+# ============================================================
+
+lesson <- readxl::read_excel(
+  workbook,
+  sheet = sheet_name,
+  range = range_name,
+  col_names = FALSE,
+  .name_repair = "minimal"
+)
+
+if (ncol(lesson) < 8L) {
+  stop("Lesson Plan range must contain columns A through H.")
+}
+
+range_start <- strsplit(
+  range_name, ":", fixed = TRUE
+)[[1]][1]
+
+start_row <- as.integer(
+  gsub("[^0-9]", "", range_start)
+)
+
+if (is.na(start_row)) {
+  stop("Cannot determine starting Excel row.")
+}
+
+# ============================================================
+# 3. READ XLSM XML
+# ============================================================
+
+tmp <- tempfile("gcet-lesson-")
+dir.create(tmp)
+
+utils::unzip(workbook, exdir = tmp)
+
+main_ns <- c(
+  x = paste0(
+    "http://schemas.openxmlformats.org/",
+    "spreadsheetml/2006/main"
+  )
+)
+
+office_rel_ns <- c(
+  r = paste0(
+    "http://schemas.openxmlformats.org/",
+    "officeDocument/2006/relationships"
+  )
+)
+
+workbook_xml <- xml2::read_xml(
+  file.path(tmp, "xl/workbook.xml")
+)
+
+workbook_rels <- xml2::read_xml(
+  file.path(tmp, "xl/_rels/workbook.xml.rels")
+)
+
+# ============================================================
+# 4. IDENTIFY LESSON PLAN WORKSHEET
+# ============================================================
+
+sheet_nodes <- xml2::xml_find_all(
+  workbook_xml,
+  ".//x:sheet",
+  ns = main_ns
+)
+
+sheet_names <- xml2::xml_attr(sheet_nodes, "name")
+
+sheet_index <- which(
+  !is.na(sheet_names) &
+    sheet_names == sheet_name
+)
+
+if (length(sheet_index) != 1L) {
+  stop("Lesson Plan worksheet not found: ", sheet_name)
+}
+
+sheet_node <- sheet_nodes[[sheet_index]]
+
+# Namespace-independent extraction of r:id
+relationship_id <- xml2::xml_attr(
+  sheet_node,
+  "r:id",
+  ns = office_rel_ns
+)
+
+if (
+  length(relationship_id) != 1L ||
+  is.na(relationship_id) ||
+  !nzchar(relationship_id)
+) {
+
+  attrs <- xml2::xml_attrs(sheet_node)
+
+  id_positions <- which(
+    names(attrs) == "r:id" |
+      grepl("(^|:)id$", names(attrs))
+  )
+
+  if (length(id_positions)) {
+    relationship_id <- unname(
+      attrs[[id_positions[[1]]]]
+    )
+  }
+}
+
+if (
+  length(relationship_id) != 1L ||
+  is.na(relationship_id) ||
+  !nzchar(relationship_id)
+) {
+  stop("Could not determine the Lesson Plan relationship ID.")
+}
+
+# ============================================================
+# 5. RESOLVE WORKSHEET XML PATH
+# ============================================================
+
+rel_nodes <- xml2::xml_find_all(
+  workbook_rels,
+  ".//*[local-name()='Relationship']"
+)
+
+rel_ids <- xml2::xml_attr(rel_nodes, "Id")
+
+rel_index <- which(
+  !is.na(rel_ids) &
+    rel_ids == relationship_id
+)
+
+if (length(rel_index) != 1L) {
+  stop("Worksheet relationship not found: ", relationship_id)
+}
+
+sheet_target <- xml2::xml_attr(
+  rel_nodes[[rel_index]],
+  "Target"
+)
+
+if (
+  length(sheet_target) != 1L ||
+  is.na(sheet_target) ||
+  !nzchar(sheet_target)
+) {
+  stop("Worksheet XML target is missing.")
+}
+
+sheet_target <- gsub("\\\\", "/", sheet_target)
+
+sheet_path <- if (startsWith(sheet_target, "/")) {
+  file.path(tmp, sub("^/", "", sheet_target))
+} else {
+  file.path(tmp, "xl", sheet_target)
+}
+
+sheet_path <- normalizePath(
+  sheet_path,
+  winslash = "/",
+  mustWork = TRUE
+)
+
+sheet_xml <- xml2::read_xml(sheet_path)
+
+# ============================================================
+# 6. EXTRACT EXCEL HYPERLINKS FROM COLUMN F
+# ============================================================
+
+sheet_rels_path <- file.path(
+  dirname(sheet_path),
+  "_rels",
+  paste0(basename(sheet_path), ".rels")
+)
+
+links <- data.frame(
+  cell = character(),
+  target = character(),
+  stringsAsFactors = FALSE
+)
+
+hyperlink_nodes <- xml2::xml_find_all(
+  sheet_xml,
+  ".//x:hyperlink",
+  ns = main_ns
+)
+
+if (
+  file.exists(sheet_rels_path) &&
+  length(hyperlink_nodes) > 0L
+) {
+
+  sheet_rels <- xml2::read_xml(sheet_rels_path)
+
+  relationship_nodes <- xml2::xml_find_all(
+    sheet_rels,
+    ".//*[local-name()='Relationship']"
+  )
+
+  relationship_ids <- xml2::xml_attr(
+    relationship_nodes,
+    "Id"
+  )
+
+  for (node in hyperlink_nodes) {
+
+    cell <- xml2::xml_attr(node, "ref")
+
+    if (
+      length(cell) != 1L ||
+      is.na(cell) ||
+      !grepl("^F[0-9]+$", cell)
+    ) next
+
+    link_id <- xml2::xml_attr(
+      node,
+      "r:id",
+      ns = office_rel_ns
+    )
+
+    if (
+      length(link_id) != 1L ||
+      is.na(link_id) ||
+      !nzchar(link_id)
+    ) next
+
+    match_index <- which(
+      !is.na(relationship_ids) &
+        relationship_ids == link_id
+    )
+
+    if (length(match_index) != 1L) next
+
+    target <- xml2::xml_attr(
+      relationship_nodes[[match_index]],
+      "Target"
+    )
+
+    if (
+      length(target) != 1L ||
+      is.na(target) ||
+      !nzchar(target)
+    ) next
+
+    links <- rbind(
+      links,
+      data.frame(
+        cell = cell,
+        target = target,
+        stringsAsFactors = FALSE
+      )
+    )
+  }
+}
+
+# ============================================================
+# 7. MATCH EXISTING LOCAL EVIDENCE
+# ============================================================
+
+get_evidence_files <- function(target) {
+
+  if (
+    length(target) != 1L ||
+    is.na(target) ||
+    !nzchar(target)
+  ) {
+    return(character())
+  }
+
+  if (grepl("^(https?|mailto):", target, ignore.case = TRUE)) {
+    return(character())
+  }
+
+  target <- utils::URLdecode(target)
+  target <- sub("^file:///?", "", target, ignore.case = TRUE)
+  target <- gsub("\\\\", "/", target)
+
+  candidates <- unique(c(
+    target,
+    file.path(chapter_dir, target),
+    file.path(dirname(workbook), target),
+    file.path(evidence_root, target),
+    file.path(dirname(chapter_dir), target)
+  ))
+
+  for (candidate in candidates) {
+
+    if (!file.exists(candidate) && !dir.exists(candidate)) {
+      next
+    }
+
+    resolved <- normalizePath(
+      candidate,
+      winslash = "/",
+      mustWork = TRUE
+    )
+
+    inside <- identical(resolved, evidence_root) ||
+      startsWith(resolved, paste0(evidence_root, "/"))
+
+    if (!inside) next
+
+    files <- if (dir.exists(resolved)) {
+      list.files(
+        resolved,
+        recursive = TRUE,
+        full.names = TRUE
+      )
+    } else {
+      resolved
+    }
+
+    files <- files[
+      file.exists(files) &
+        !dir.exists(files)
+    ]
+
+    files <- files[
+      grepl(
+        "\\.(png|jpg|jpeg|pdf)$",
+        files,
+        ignore.case = TRUE
+      )
+    ]
+
+    if (length(files)) {
+      return(sort(unique(files)))
+    }
+  }
+
+  character()
+}
+
+# ============================================================
+# 8. BUILD ACTIVITY & EVIDENCE RECORDS
+# ============================================================
+
+get_value <- function(i, column) {
+
+  value <- lesson[[column]][i]
+
+  if (length(value) == 0L || is.na(value)) {
+    return("")
+  }
+
+  as.character(value)
+}
+
+records <- list()
+
+for (i in seq_len(nrow(lesson))) {
+
+  excel_row <- start_row + i - 1L
+  cell_ref <- paste0("F", excel_row)
+
+  hit <- links[
+    links$cell == cell_ref,
+    ,
+    drop = FALSE
+  ]
+
+  if (!nrow(hit)) next
+
+  evidence_files <- get_evidence_files(
+    hit$target[[1]]
+  )
+
+  if (!length(evidence_files)) next
+
+  activity <- get_value(i, activity_col)
+
+  if (!nzchar(trimws(activity))) next
+
+  records[[length(records) + 1L]] <- data.frame(
+    Date = get_value(i, date_col),
+    `Lecture No.` = get_value(i, lecture_col),
+    Topic = get_value(i, topic_col),
+    `Activity Conducted` = activity,
+    `Evidence Maintained` = "",
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+}
+
+# ============================================================
+# 9. RENDER TABLE: PDF (9 PT) + DOCX (FLEXTABLE, 9 PT)
+# ============================================================
+
+cat("## Activity & Evidence Sheet\n\n")
+
+if (!length(records)) {
+
+  cat("*No matching Activity & Evidence records found.*\n\n")
+
+} else {
+
+  result <- unique(do.call(rbind, records))
+
+  result[] <- lapply(result, function(x) {
+    x <- as.character(x)
+    x[is.na(x) | !nzchar(trimws(x))] <- "—"
+    x
+  })
+  result[["Evidence Maintained"]] <- ""
+  names(result) <- c(
+    "Date",
+    "Lecture No.",
+    "Topic",
+    "Activity Conducted",
+    "Evidence Maintained"
+  )
+
+  if (knitr::is_latex_output()) {
+
+    # --------------------------------------------------------
+    # PDF: 9 pt longtable with fixed column widths
+    # --------------------------------------------------------
+
+    latex_table <- knitr::kable(
+      result,
+      format = "latex",
+      booktabs = TRUE,
+      longtable = TRUE,
+      row.names = FALSE,
+      escape = TRUE,
+      linesep = "",
+      align = c(
+        "p{1.8cm}",
+        "p{1.3cm}",
+        "p{3.0cm}",
+        "p{3.0cm}",
+        "p{4.5cm}"
+      )
+    )
+
+    cat("\\begingroup\n")
+    cat("\\fontsize{9}{11}\\selectfont\n")
+    cat("\\setlength{\\tabcolsep}{3pt}\n")
+    cat("\\renewcommand{\\arraystretch}{1.05}\n")
+
+    cat(as.character(latex_table), "\n")
+
+    cat("\\endgroup\n\n")
+
+  } else if (knitr::pandoc_to("docx")) {
+
+    # --------------------------------------------------------
+    # DOCX: flextable, 9 pt
+    # --------------------------------------------------------
+
+    ft <- flextable::flextable(result)
+
+    ft <- flextable::font(
+      ft,
+      fontname = "Times New Roman",
+      part = "all"
+    )
+
+    ft <- flextable::fontsize(
+      ft,
+      size = 9,
+      part = "all"
+    )
+
+    ft <- flextable::bold(
+      ft,
+      part = "header"
+    )
+
+    ft <- flextable::align(
+      ft,
+      j = 2,
+      align = "center",
+      part = "all"
+    )
+
+    ft <- flextable::valign(
+      ft,
+      valign = "top",
+      part = "all"
+    )
+
+    ft <- flextable::padding(
+      ft,
+      padding = 3,
+      part = "all"
+    )
+
+    ft <- flextable::set_table_properties(
+      ft,
+      layout = "fixed",
+      width = 1
+    )
+
+    ft <- flextable::width(
+      ft,
+      j = 1:5,
+      width = c(
+        0.85,
+        0.65,
+        1.35,
+        1.35,
+        2.20
+      )
+    )
+
+    # Repeat header row on subsequent Word pages
+    ft <- flextable::set_table_properties(
+      ft,
+      opts_word = list(
+        repeat_headers = TRUE
+      )
+    )
+
+    # Emit flextable in Quarto/knitr
+    cat(
+      as.character(knitr::knit_print(ft)),
+      sep = "\n"
+    )
+
+    cat("\n\n")
+
+  } else {
+
+    # --------------------------------------------------------
+    # Other output formats
+    # --------------------------------------------------------
+
+    cat(
+      knitr::kable(
+        result,
+        format = "pipe",
+        row.names = FALSE
+      ),
+      sep = "\n"
+    )
+
+    cat("\n\n")
+  }
+}
+
+# ============================================================
+# 10. CLEAN UP
+# ============================================================
+
+unlink(tmp, recursive = TRUE)
+```

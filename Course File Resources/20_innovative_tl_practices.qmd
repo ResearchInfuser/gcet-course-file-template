@@ -1,0 +1,205 @@
+---
+title: "Innovative T&L practices followed (with proof)"
+---
+
+```{r}
+#| label: innovative-tl-practices
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(readxl)
+library(xml2)
+
+if (!exists("get_workbook_path", mode = "function") ||
+    !exists("get_project_root", mode = "function")) {
+  candidates <- c("_data_helpers.R", "Course File Resources/_data_helpers.R",
+                  "../_data_helpers.R", "_data_helpers_schema_only.R",
+                  "Course File Resources/_data_helpers_schema_only.R",
+                  "../_data_helpers_schema_only.R")
+  found <- candidates[file.exists(candidates)]
+  if (!length(found)) stop("Cannot locate course-file data helpers.")
+  source(found[1])
+}
+
+# Excel Ctrl+K hyperlinks live in OOXML relationships, not cell values.
+# Return cell references, target paths, and displayed cell values.
+read_excel_folder_links <- function(workbook, sheet_name) {
+  archive <- unzip(workbook, list = TRUE)$Name
+  temp <- tempfile("excel_links_")
+  dir.create(temp)
+  on.exit(unlink(temp, recursive = TRUE), add = TRUE)
+  get_xml <- function(name) {
+    if (!name %in% archive) return(NULL)
+    unzip(workbook, files = name, exdir = temp)
+    read_xml(file.path(temp, name))
+  }
+  attr_local <- function(node, key) {
+    attrs <- xml_attrs(node)
+    hit <- which(sub("^.*[}:]", "", names(attrs)) == key)
+    if (length(hit)) unname(attrs[hit[1]]) else NA_character_
+  }
+  nodes <- function(doc, tag) {
+    if (is.null(doc)) return(xml_find_all(read_xml("<empty/>"), "./missing"))
+    xml_find_all(doc, paste0(".//*[local-name()='", tag, "']"))
+  }
+  book <- get_xml("xl/workbook.xml")
+  book_rels <- get_xml("xl/_rels/workbook.xml.rels")
+  if (is.null(book) || is.null(book_rels)) stop("Workbook XML is unavailable.")
+  sheets <- nodes(book, "sheet")
+  match_sheet <- sheets[vapply(sheets, function(s) identical(xml_attr(s, "name"), sheet_name), logical(1))]
+  if (!length(match_sheet)) stop("Worksheet not found: ", sheet_name)
+  sheet_id <- attr_local(match_sheet[[1]], "id")
+  rels <- nodes(book_rels, "Relationship")
+  sheet_rel <- rels[vapply(rels, function(x) identical(xml_attr(x, "Id"), sheet_id), logical(1))]
+  if (!length(sheet_rel)) stop("Worksheet relationship missing: ", sheet_name)
+  target <- xml_attr(sheet_rel[[1]], "Target")
+  sheet_xml <- if (startsWith(target, "/")) sub("^/", "", target) else
+    paste0("xl/", sub("^\\./", "", target))
+  sheet_xml <- gsub("/[^/]+/\\.\\./", "/", sheet_xml)
+  sheet_doc <- get_xml(sheet_xml)
+  if (is.null(sheet_doc)) stop("Worksheet XML unavailable: ", sheet_xml)
+
+  # Schema range A7:I51: row 7 is the secondary header,
+  # records begin in Excel row 8; activity descriptions are in F.
+  configured_range <- if (exists("cf_range", mode = "function"))
+    cf_range("lesson_plan") else "A7:I51"
+  if (!is.character(configured_range) || length(configured_range) != 1L)
+    stop("lesson_plan range must be a single A1 range string")
+  start_row <- as.integer(sub("^[A-Z]+([0-9]+):.*$", "\\1", configured_range))
+  end_row <- as.integer(sub("^.*:[A-Z]+([0-9]+)$", "\\1", configured_range))
+  if (is.na(start_row) || is.na(end_row)) stop("Invalid range: ", configured_range)
+  table <- as.data.frame(readxl::read_excel(
+    workbook, sheet = sheet_name, range = configured_range,
+    col_names = FALSE, .name_repair = "minimal"), check.names = FALSE)
+  col_idx <- 6L
+  col_letter <- "F"
+  first_data_row <- max(8L, start_row + 1L)
+  rel_path <- paste0(dirname(sheet_xml), "/_rels/", basename(sheet_xml), ".rels")
+  link_rels <- get_xml(rel_path)
+  relationship_nodes <- nodes(link_rels, "Relationship")
+  hyperlinks <- nodes(sheet_doc, "hyperlink")
+  output <- list()
+  for (h in hyperlinks) {
+    cell <- xml_attr(h, "ref")
+    if (!grepl(paste0("^", col_letter, "[0-9]+$"), cell)) next
+    rid <- attr_local(h, "id")
+    rel <- relationship_nodes[vapply(relationship_nodes,
+      function(x) identical(xml_attr(x, "Id"), rid), logical(1))]
+    path <- if (length(rel)) xml_attr(rel[[1]], "Target") else xml_attr(h, "location")
+    if (is.na(path) || !nzchar(path)) next
+    row_number <- as.integer(sub("^[A-Z]+", "", cell))
+    if (row_number < first_data_row || row_number > end_row) next
+    table_idx <- row_number - start_row + 1L
+    if (table_idx < 1L || table_idx > nrow(table)) next
+    activity <- as.character(table[[col_idx]][table_idx])
+    if (is.na(activity) || !nzchar(trimws(activity))) next
+    output[[length(output) + 1L]] <- data.frame(
+      cell = cell, activity = trimws(activity), target = path,
+      stringsAsFactors = FALSE)
+  }
+  if (!length(output)) return(data.frame(cell = character(), activity = character(), target = character()))
+  do.call(rbind, output)
+}
+
+# Decode Excel hyperlink targets and locate evidence folders. Prefer paths
+# relative to the workbook, but also support links relative to project root.
+resolve_evidence_folder <- function(target, workbook, root) {
+  path <- utils::URLdecode(target)
+  path <- sub("^file:///", "", path, ignore.case = TRUE)
+  path <- gsub("\\\\", "/", path)
+  path <- sub("^\\./", "", path)
+  path <- sub("/$", "", path)
+  if (grepl("^[A-Za-z]+://", path)) return(NULL)
+  if (grepl("^/[A-Za-z]:/", path)) path <- substring(path, 2)
+  absolute <- grepl("^([A-Za-z]:/|/|//)", path)
+  candidates <- if (absolute) path else c(
+    file.path(dirname(workbook), path),
+    file.path(root, path),
+    file.path(root, "Course File Resources", path)
+  )
+  # Excel may store project-relative paths that begin at the resources folder.
+  for (candidate in unique(candidates)) {
+    if (dir.exists(candidate)) return(normalizePath(candidate, winslash = "/"))
+  }
+  NULL
+}
+
+# Emit a portable image reference relative to the chapter's QMD directory.
+# Quarto resolves Markdown image links relative to the source document.
+chapter_image_path <- function(image, root) {
+  chapter_dir <- file.path(root, "Course File Resources")
+  img <- normalizePath(image, winslash = "/", mustWork = TRUE)
+  base <- normalizePath(chapter_dir, winslash = "/", mustWork = TRUE)
+  prefix <- paste0(sub("/+$", "", base), "/")
+  if (!startsWith(tolower(img), tolower(prefix))) return(NULL)
+  substring(img, nchar(prefix) + 1L)
+}
+
+clean_heading <- function(x) {
+  x <- gsub("[_-]+", " ", x)
+  x <- gsub("[\\r\\n#*`<>|\\[\\]]", " ", x)
+  trimws(gsub(" +", " ", x))
+}
+
+activity_heading <- function(x) {
+  # Keep the activity name exactly as written, except line breaks.
+  trimws(gsub("[\r\n]+", " ", as.character(x)))
+}
+
+natural_sort <- function(x) {
+  # Sort 1.png, 2.png, 10.png in numeric order.
+  nm <- basename(x)
+  numbers <- suppressWarnings(as.integer(sub("^([0-9]+).*", "\\1", nm)))
+  x[order(is.na(numbers), numbers, tolower(nm))]
+}
+
+workbook <- get_workbook_path()
+if (is.na(workbook) || !file.exists(workbook)) {
+  stop("Course workbook not found.")
+}
+root <- get_project_root()
+worksheet <- if (exists("cf_sheet", mode = "function")) cf_sheet("lesson_plan") else "9.Lesson_Plan"
+links <- read_excel_folder_links(workbook, worksheet)
+seen_folders <- character()
+shown <- 0L
+
+for (i in seq_len(nrow(links))) {
+  folder <- resolve_evidence_folder(links$target[i], workbook, root)
+  if (is.null(folder)) {
+    warning("Folder hyperlink not found in ", links$cell[i], ": ", links$target[i])
+    next
+  }
+  if (tolower(folder) %in% seen_folders) next
+  seen_folders <- c(seen_folders, tolower(folder))
+
+  images <- list.files(folder, pattern = "\\.png$", full.names = TRUE,
+                       recursive = TRUE, ignore.case = TRUE)
+  images <- images[file.exists(images)]
+  if (!length(images)) next
+  shown <- shown + 1L
+  cat("\n\n### ", activity_heading(links$activity[i]), " {.unnumbered}\n\n", sep = "")
+
+  # Organize evidence by relative subfolder (Notes, Assignments/HA_1, etc.).
+  relative <- substring(gsub("\\\\", "/", images), nchar(folder) + 2L)
+  subfolders <- dirname(relative)
+  for (subfolder in unique(subfolders)) {
+    if (subfolder != ".") {
+      pieces <- strsplit(subfolder, "/", fixed = TRUE)[[1]]
+      cat("\n\n#### ", paste(vapply(pieces, clean_heading, character(1)), collapse = " / "),
+          " {.unnumbered}\n\n", sep = "")
+    }
+    for (image in natural_sort(images[subfolders == subfolder])) {
+      link <- chapter_image_path(image, root)
+      if (is.null(link)) {
+        warning("Image outside Course File Resources: ", image)
+        next
+      }
+      # Escape spaces and punctuation for Markdown destinations.
+      cat("![](<", link, ">){width=95%}\n\n", sep = "")
+    }
+  }
+}
+if (!shown) cat("*No linked evidence folders containing PNG images were found.*\n\n")
+```

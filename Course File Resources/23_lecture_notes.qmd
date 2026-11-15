@@ -1,0 +1,78 @@
+---
+title: "Lecture Notes / PPTs / Study Material"
+---
+
+```{r}
+#| label: lecture-notes-material
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+# Locate the QMD directory
+chapter_dir <- dirname(knitr::current_input(dir = TRUE))
+
+# Load GCET helper functions
+source(file.path(chapter_dir, "_data_helpers.R"))
+
+# Lecture notes folder alongside the QMD
+root <- file.path(chapter_dir, "23_lecture_notes")
+
+if (!dir.exists(root)) {
+
+  cat("*Lecture notes folder not found.*\n\n")
+
+} else {
+
+  files <- sort(list.files(
+    root,
+    pattern = "\\.pdf$",
+    recursive = TRUE,
+    full.names = TRUE,
+    ignore.case = TRUE
+  ))
+
+  if (length(files) == 0) {
+
+    cat("*No PDF lecture notes found.*\n\n")
+
+  } else {
+
+    for (file in files) {
+
+      title <- tools::file_path_sans_ext(basename(file))
+
+      cat("## ", title, "\n\n", sep = "")
+
+      path <- normalizePath(
+        file,
+        winslash = "/",
+        mustWork = TRUE
+      )
+
+      if (knitr::is_latex_output()) {
+
+            cat(
+            "```{=latex}\n",
+            "\\includepdf[",
+            "pages=-,",
+            "pagecommand={\\thispagestyle{empty}},",
+            "fitpaper=false",
+            "]{",
+            path,
+            "}\n",
+            "```\n\n",
+            sep = ""
+            )
+
+      } else {
+
+        cat(
+          "[", title, "](<", path, ">)\n\n",
+          sep = ""
+        )
+      }
+    }
+  }
+}
+```

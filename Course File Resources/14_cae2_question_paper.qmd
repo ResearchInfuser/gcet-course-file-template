@@ -1,0 +1,42 @@
+---
+title: "CAE-II Question Paper & Solution"
+---
+
+### CAE-II Attendance & Marks Record {.unnumbered}
+
+The table below is read live from the `Register` sheet of the workbook.
+
+```{r}
+#| label: cae2-marks-record
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+library(kableExtra)
+
+source(file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"))
+
+register_df <- read_workbook_sheet(cf_sheet("register"))
+
+if (is.null(register_df)) {
+	notify_workbook_missing()
+} else {
+	register_df <- as.data.frame(register_df)
+	render_register_table(
+		register_df,
+		keys = c("serial_no", "student_name", "cae2_attendance", "cae2_marks"),
+		labels = c("S. No.", "Student Name", "CAE-II Attendance", "CAE-II Marks"),
+		col_widths = c("0.40in", "2.80in")
+	)
+}
+```
+
+### CAE-II Question Paper {.unnumbered}
+
+_Attach/paste the CAE-II question paper here._
+
+### CAE-II Model Solution {.unnumbered}
+
+_Attach/paste the CAE-II model solution here._

@@ -1,0 +1,45 @@
+---
+title: "Home Assignments / Tutorials"
+---
+
+### Assignment / Tutorial Record {.unnumbered}
+
+The table below is read live from the `Register` sheet (assignment/tutorial grade columns) of the workbook.
+
+```{r}
+#| label: assignment-tutorial-record
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(readxl)
+library(knitr)
+library(kableExtra)
+
+source(file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"))
+
+register_df <- read_workbook_sheet(cf_sheet("register"))
+
+if (is.null(register_df)) {
+	notify_workbook_missing()
+} else {
+	register_df <- as.data.frame(register_df)
+	render_register_table(
+		register_df,
+		keys = c("serial_no", "student_name", "assignment_1", "assignment_2", "assignment_3", "assignment_4", "assignment_5", "assignment_total"),
+		labels = c("S. No.", "Student Name", "Assign. 1", "Assign. 2", "Assign. 3", "Assign. 4", "Assign. 5", "Total"),
+		col_widths = c("0.35in", "2.30in"),
+		font_size = 8,
+		tight = TRUE
+	)
+}
+```
+
+### Assignment / Tutorial Questions {.unnumbered}
+
+_The workbook does not include an assignment-question bank yet. List the CO-wise/unit-wise home assignments and tutorial sheets issued during the semester here, e.g.:_
+
+| S. No. | Unit | CO Mapped | Assignment / Tutorial Title | Issue Date | Submission Date |
+|---|---|---|---|---|---|
+|  |  |  |  |  |  |

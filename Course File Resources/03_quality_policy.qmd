@@ -1,0 +1,26 @@
+---
+title: "Quality Policy"
+---
+
+```{r}
+#| label: quality-policy-content
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+helper_candidates <- c(
+	file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"),
+	file.path(dirname(knitr::current_input(dir = TRUE)), "Course File Resources", "_data_helpers.R")
+)
+source(helper_candidates[file.exists(helper_candidates)][1])
+
+policy_df <- read_workbook_sheet(cf_sheet("quality_policy"), col_names = FALSE)
+
+if (is.null(policy_df)) {
+	notify_workbook_missing()
+} else {
+	policy_text <- trimws(as.character(policy_df[[1]][2]))
+	cat(policy_text, "\n")
+}
+```

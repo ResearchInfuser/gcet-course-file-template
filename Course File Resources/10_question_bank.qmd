@@ -1,0 +1,11 @@
+---
+title: "Question Bank (CO-wise)"
+---
+
+_The workbook does not include a question-bank sheet yet. Add the CO-wise question bank here (or add a `Question_Bank` sheet to the workbook with columns such as `CO`, `Unit`, `Question`, `Marks`, `Bloom's Level`, and bind it the same way as the other tables in this course file)._
+
+### Unit-wise / CO-wise Question List {.unnumbered}
+
+| S. No. | CO | Unit | Question | Marks | Bloom's Level |
+|---|---|---|---|---|---|
+|  |  |  |  |  |  |

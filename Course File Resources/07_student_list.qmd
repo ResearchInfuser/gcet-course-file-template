@@ -1,0 +1,179 @@
+---
+title: "Student List"
+---
+
+
+```{r}
+#| label: tbl-student-list-table
+#| echo: false
+#| message: false
+#| warning: false
+
+library(knitr)
+
+source(file.path(
+    dirname(knitr::current_input(dir = TRUE)),
+    "_data_helpers.R"
+))
+
+# Read student register
+register_df <- read_workbook_sheet(cf_sheet("register"))
+
+if (is.null(register_df)) {
+
+    notify_workbook_missing()
+
+} else {
+
+    register_df <- as.data.frame(register_df)
+
+    student_df <- get_register_columns(
+        register_df,
+        c(
+            "serial_no",
+            "section",
+            "admission_no",
+            "student_name"
+        )
+    )
+
+    names(student_df) <- c(
+        "S. No.",
+        "Branch / Section",
+        "Admission No",
+        "Student Name"
+    )
+
+    # Remove records without student names
+    student_df <- student_df[
+        !is.na(student_df[["Student Name"]]) &
+        nzchar(trimws(as.character(student_df[["Student Name"]]))),
+        ,
+        drop = FALSE
+    ]
+
+    rownames(student_df) <- NULL
+
+    # Replace missing values with "-"
+    student_df[] <- lapply(student_df, function(x) {
+        x <- as.character(x)
+        x[is.na(x) | !nzchar(trimws(x))] <- "-"
+        x
+    })
+
+    table_caption <- paste0(
+        "Student List for ",
+        cf_value("course-code"),
+        " ",
+        cf_value("section-name")
+    )
+
+    # Select rendering package based on output format
+    if (knitr::pandoc_to("docx")) {
+
+        library(flextable)
+
+        student_tbl <- flextable(student_df) |>
+            set_caption(caption = table_caption) |>
+            theme_booktabs() |>
+            bold(part = "header") |>
+            bg(
+                i = seq(2, nrow(student_df), by = 2),
+                bg = "#F3F5F7",
+                part = "body"
+            ) |>
+            align(
+                j = 1:3,
+                align = "center",
+                part = "all"
+            ) |>
+            align(
+                j = 4,
+                align = "left",
+                part = "all"
+            ) |>
+            valign(
+                valign = "center",
+                part = "all"
+            ) |>
+            fontsize(
+                size = 9,
+                part = "all"
+            ) |>
+            width(j = 1, width = 0.55) |>
+            width(j = 2, width = 1.25) |>
+            width(j = 3, width = 1.45) |>
+            width(j = 4, width = 2.80) |>
+            padding(
+                padding = 4,
+                part = "all"
+            ) |>
+            set_table_properties(
+                layout = "fixed",
+                opts_word = list(
+                    repeat_headers = TRUE,
+                    split = FALSE
+                )
+            )
+
+    } else {
+
+        library(kableExtra)
+
+        if (knitr::is_latex_output()) {
+
+            student_tbl <- kbl(
+                student_df,
+                format = "latex",
+                longtable = TRUE,
+                booktabs = TRUE,
+                caption = table_caption,
+                row.names = FALSE,
+                align = c("c", "c", "c", "l")
+            ) |>
+                kable_styling(
+                    latex_options = c(
+                        "repeat_header",
+                        "striped"
+                    ),
+                    stripe_color = "gray!12",
+                    font_size = 9,
+                    full_width = FALSE
+                ) |>
+                column_spec(1, width = "0.55in") |>
+                column_spec(2, width = "1.25in") |>
+                column_spec(3, width = "1.45in") |>
+                column_spec(4, width = "2.80in")
+
+        } else {
+
+            student_tbl <- kbl(
+                student_df,
+                format = "html",
+                caption = table_caption,
+                row.names = FALSE,
+                align = c("c", "c", "c", "l")
+            ) |>
+                kable_styling(
+                    bootstrap_options = c(
+                        "striped",
+                        "bordered",
+                        "hover",
+                        "condensed"
+                    ),
+                    full_width = FALSE,
+                    position = "center"
+                ) |>
+                row_spec(
+                    0,
+                    bold = TRUE,
+                    background = "#E8EDF2"
+                )
+        }
+    }
+
+    # Explicitly invoke the registered knitr renderer.
+    # This works even inside an if/else block.
+    knitr::knit_print(student_tbl)
+}
+```

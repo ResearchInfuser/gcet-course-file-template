@@ -1,0 +1,367 @@
+---
+title: "CO Assessment Plan & Target Levels"
+---
+
+The CO assessment process for this course uses a combination of direct and indirect assessment methods. Direct assessment is carried out through internal evaluation (Continuous Assessment Examinations CAE & PUT) and external evaluation (AKTU End Semester Examinations). Indirect assessment is evaluated through course exit surveys, co-curricular/extracurricular activities, industrial visits, guest lectures, and alumni interactions.
+
+### CO Assessment Tools: {{< meta coursefile.academic-session >}} {.unnumbered}
+
+```{r}
+#| label: co-assessment-plan-table
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+
+# ---------------------------------------------------------
+# 1. Assessment data (shared across all output formats)
+# ---------------------------------------------------------
+
+assessment_df <- data.frame(
+    `Course Type` = rep("Theory", 3),
+    `Assessment Method` = c(
+        "Direct Method (80%)",
+        "Direct Method (80%)",
+        "Indirect Method (20%)"
+    ),
+    `Components` = c(
+        "Internal Assessment (30%)",
+        "External Assessment (70%)",
+        "—"
+    ),
+    `Assessment Tool` = c(
+        "Continuous Assessment Examinations (CAE & PUT)",
+        "AKTU End-Semester Examinations",
+        paste(
+            "Course Exit Survey, mapped co-curricular and",
+            "extracurricular activities, industrial visits,",
+            "alumni talks, guest lectures, etc."
+        )
+    ),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+)
+
+# ---------------------------------------------------------
+# 2. PDF output: kableExtra
+# ---------------------------------------------------------
+
+if (knitr::is_latex_output()) {
+
+    library(kableExtra)
+
+    tbl <- kbl(
+        assessment_df,
+        format = "latex",
+        booktabs = TRUE,
+        longtable = TRUE,
+        align = c("c", "c", "l", "l"),
+        linesep = ""
+    ) |>
+        kable_styling(
+            latex_options = "repeat_header",
+            font_size = 9,
+            full_width = FALSE
+        ) |>
+        column_spec(1, width = "0.70in", bold = TRUE) |>
+        column_spec(2, width = "1.25in") |>
+        column_spec(3, width = "1.40in") |>
+        column_spec(4, width = "2.20in") |>
+        row_spec(0, bold = TRUE)
+
+    cat(as.character(tbl), "\n\n", sep = "")
+
+# ---------------------------------------------------------
+# 3. DOCX output: flextable
+# ---------------------------------------------------------
+
+} else if (knitr::pandoc_to("docx")) {
+
+    library(flextable)
+
+    tbl <- flextable(assessment_df) |>
+        merge_v(
+            j = "Course Type",
+            part = "body"
+        ) |>
+        merge_v(
+            j = "Assessment Method",
+            part = "body"
+        ) |>
+        theme_booktabs() |>
+        bold(
+            part = "header"
+        ) |>
+        bold(
+            j = "Course Type",
+            part = "body"
+        ) |>
+        align(
+            j = c("Course Type", "Assessment Method"),
+            align = "center",
+            part = "all"
+        ) |>
+        valign(
+            valign = "center",
+            part = "body"
+        ) |>
+        fontsize(
+            size = 9,
+            part = "all"
+        ) |>
+        width(
+            j = 1,
+            width = 0.70
+        ) |>
+        width(
+            j = 2,
+            width = 1.25
+        ) |>
+        width(
+            j = 3,
+            width = 1.40
+        ) |>
+        width(
+            j = 4,
+            width = 2.20
+        ) |>
+        padding(
+            padding = 5,
+            part = "all"
+        ) |>
+        set_table_properties(
+            layout = "fixed"
+        )
+
+    flextable::flextable_to_rmd(tbl)
+
+# ---------------------------------------------------------
+# 4. HTML output: kableExtra
+# ---------------------------------------------------------
+
+} else if (knitr::is_html_output()) {
+
+    library(kableExtra)
+
+    tbl <- kbl(
+        assessment_df,
+        format = "html",
+        align = c("c", "c", "l", "l")
+    ) |>
+        kable_styling(
+            bootstrap_options = c(
+                "bordered",
+                "condensed"
+            ),
+            full_width = FALSE,
+            position = "center"
+        ) |>
+        row_spec(
+            0,
+            bold = TRUE,
+            background = "#EDF1F5"
+        ) |>
+        column_spec(
+            1,
+            width = "85px",
+            bold = TRUE
+        ) |>
+        column_spec(
+            2,
+            width = "150px"
+        ) |>
+        column_spec(
+            3,
+            width = "170px"
+        ) |>
+        column_spec(
+            4,
+            width = "270px"
+        ) |>
+        collapse_rows(
+            columns = c(1, 2),
+            valign = "middle"
+        )
+
+    cat(as.character(tbl), "\n\n", sep = "")
+}
+```
+
+
+
+### Attainment Level for Direct Method of Assessment {.unnumbered}
+
+```{r}
+#| label: direct-attainment-levels-table
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+
+# Local table renderer: no dependency on _data_helpers_course_tables.R.
+# PDF uses non-floating longtable so tables stay with their headings.
+render_attainment_table <- function(df, widths, font_size = 9,
+                                    align = NULL, merge_first_column = FALSE) {
+    df <- as.data.frame(df, check.names = FALSE, stringsAsFactors = FALSE)
+    df[] <- lapply(df, as.character)
+    if (is.null(align)) align <- rep("l", ncol(df))
+    stopifnot(length(widths) == ncol(df), length(align) == ncol(df))
+
+    if (knitr::is_latex_output()) {
+        tab <- kableExtra::kbl(
+            df, format = "latex", booktabs = TRUE, longtable = TRUE,
+            row.names = FALSE, align = align, escape = TRUE
+        ) |>
+            kableExtra::kable_styling(
+                latex_options = c("repeat_header", "striped"),
+                stripe_color = "gray!10", font_size = font_size,
+                full_width = FALSE
+            )
+        for (j in seq_along(widths)) {
+            tab <- kableExtra::column_spec(
+                tab, j, width = paste0(widths[j], "in")
+            )
+        }
+        # Do not use collapse_rows for longtable: keeping rows intact
+        # avoids incompatible multirow/float placement behavior.
+        cat(as.character(tab), "\n\n", sep = "")
+
+    } else if (knitr::pandoc_to("docx")) {
+        ft <- flextable::flextable(df) |>
+            flextable::theme_booktabs() |>
+            flextable::bold(part = "header") |>
+            flextable::fontsize(size = font_size, part = "all") |>
+            flextable::valign(valign = "center", part = "all") |>
+            flextable::padding(padding = 4, part = "all")
+        for (j in seq_along(widths)) {
+            ft <- flextable::width(ft, j = j, width = widths[j])
+            ft <- flextable::align(
+                ft, j = j,
+                align = switch(align[j], c = "center", r = "right", "left"),
+                part = "all"
+            )
+        }
+        if (merge_first_column && nrow(df) > 1L) {
+            ft <- flextable::merge_v(ft, j = 1, part = "body")
+        }
+        ft <- flextable::set_table_properties(
+            ft, layout = "fixed", opts_word = list(repeat_headers = TRUE)
+        )
+        flextable::flextable_to_rmd(ft)
+
+    } else if (knitr::is_html_output()) {
+        tab <- kableExtra::kbl(
+            df, format = "html", row.names = FALSE, align = align
+        ) |>
+            kableExtra::kable_styling(
+                bootstrap_options = c("striped", "bordered", "condensed"),
+                full_width = FALSE
+            )
+        if (merge_first_column && nrow(df) > 1L) {
+            tab <- kableExtra::collapse_rows(tab, columns = 1)
+        }
+        cat(as.character(tab), "\n\n", sep = "")
+    } else {
+        cat(knitr::kable(df), sep = "\n")
+        cat("\n\n")
+    }
+    invisible(NULL)
+}
+
+direct_levels_df <- data.frame(
+    Level = c("1", "2", "3"),
+    Internal = c(
+        "<= 50% of the students secure 60% or more marks",
+        "Between 50-60% of the students secure 60% or more marks",
+        ">= 60% of the students secure 60% or more marks"
+    ),
+    External = c(
+        "<= 50% of the students secure 50% or more marks",
+        "Between 50-60% of the students secure 50% or more marks",
+        ">= 60% of the students secure 50% or more marks"
+    ),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+)
+
+render_attainment_table(
+    df = direct_levels_df,
+    widths = c(0.60, 2.65, 2.65),
+    font_size = 9,
+    align = c("c", "l", "l")
+)
+```
+
+### Attainment Level for Indirect Assessment {.unnumbered}
+
+Employer feedback and student activities will be used alongside the graduate exit survey to achieve indirect PO attainment.
+
+```{r}
+#| label: indirect-attainment-levels-table
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+indirect_levels_df <- data.frame(
+    Level = c("1", "2", "3"),
+    Target = c(
+        "<= 50% of the students attained the course outcome",
+        "Between 50-60% of the students attained the course outcome",
+        ">= 60% of the students attained the course outcome"
+    ),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+)
+
+render_attainment_table(
+    df = indirect_levels_df,
+    widths = c(0.60, 5.30),
+    font_size = 9,
+    align = c("c", "l")
+)
+```
+
+### PO/PSO Attainment Methods and Tools {.unnumbered}
+
+```{r}
+#| label: popso-attainment-methods-tools-table
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+popso_df <- data.frame(
+    " " = c(
+        "POs/PSOs Attainment",
+        "POs/PSOs Attainment"
+    ),
+    "Assessment Method" = c(
+        "Direct Method (80% weightage)",
+        "Indirect Method (20% weightage)"
+    ),
+    "Assessment Tool" = c(
+        "Course Outcome Attainment",
+        paste(
+            "Graduate Exit Survey, Employer Feedback,",
+            "Co-curricular & Extra-Curricular Activities"
+        )
+    ),
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+)
+
+# Merge the first column in DOCX/HTML; PDF uses a non-floating longtable.
+
+render_attainment_table(
+    df = popso_df,
+    widths = c(1.40, 1.80, 2.70),
+    font_size = 9,
+    align = c("l", "l", "l"),
+    merge_first_column = TRUE
+)
+```

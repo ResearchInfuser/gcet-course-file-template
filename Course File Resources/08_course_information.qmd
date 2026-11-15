@@ -1,0 +1,294 @@
+---
+title: "Course Information Sheet"
+---
+
+```{r}
+#| label: course-header-info
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+source(file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"))
+
+header <- read_workbook_sheet(cf_sheet("course_info"), range = cf_range("course_header"))
+if (is.null(header)) {
+  notify_workbook_missing()
+} else {
+  header <- as.data.frame(header)
+  stopifnot(nrow(header) >= 1L, ncol(header) >= 2L)
+  cat("**Course Code:** ", trimws(as.character(header[1, 1])), "  \n",
+      "**Course Name:** ", trimws(as.character(header[1, 2])), "\n\n", sep = "")
+}
+```
+
+## (a) CO and CO-PO Mapping {.unnumbered}
+
+### Course Outcomes {.unnumbered}
+
+```{r}
+#| label: co-table
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+co_raw <- read_workbook_sheet(cf_sheet("course_info"), range = cf_range("co_table"))
+if (is.null(co_raw)) {
+  notify_workbook_missing()
+} else {
+  co_df <- as.data.frame(co_raw, check.names = FALSE)
+  if (ncol(co_df) != 3L) stop("CO table must contain three columns")
+  names(co_df) <- c("CO", "Bloom's Knowledge Level", "Course Outcome")
+  co_df <- co_df[!is.na(co_df$CO) & nzchar(trimws(as.character(co_df$CO))), , drop = FALSE]
+  rownames(co_df) <- NULL
+  co_df[] <- lapply(co_df, function(x) { x <- as.character(x); x[is.na(x)] <- ""; x })
+
+  if (knitr::pandoc_to("docx")) {
+    ft <- flextable::flextable(co_df) |>
+      flextable::theme_booktabs() |>
+      flextable::bold(part = "header") |>
+      flextable::fontsize(size = 9, part = "all") |>
+      flextable::valign(valign = "center", part = "all") |>
+      flextable::align(j = 1:2, align = "center", part = "all") |>
+      flextable::width(j = 1, width = 0.55) |>
+      flextable::width(j = 2, width = 1.15) |>
+      flextable::width(j = 3, width = 4.4) |>
+      flextable::set_table_properties(layout = "fixed", opts_word = list(repeat_headers = TRUE, split = FALSE))
+    flextable::flextable_to_rmd(ft)
+  } else if (knitr::is_latex_output()) {
+    # longtable is NON-FLOATING: it stays under this heading.
+    tbl <- kableExtra::kbl(co_df, format = "latex", booktabs = TRUE,
+                            longtable = TRUE, align = c("c", "c", "l")) |>
+      kableExtra::kable_styling(latex_options = c("repeat_header", "striped"),
+                                stripe_color = "gray!12", font_size = 9, full_width = FALSE) |>
+      kableExtra::column_spec(1, width = "0.55in") |>
+      kableExtra::column_spec(2, width = "1.15in") |>
+      kableExtra::column_spec(3, width = "4.4in")
+    cat(as.character(tbl), "\n\n", sep = "")
+  } else {
+    tbl <- kableExtra::kbl(co_df, format = "html", align = c("c", "c", "l")) |>
+      kableExtra::kable_styling(bootstrap_options = c("striped", "bordered"), full_width = FALSE)
+    cat(as.character(tbl), "\n\n", sep = "")
+  }
+}
+```
+
+### CO-PO Mapping Matrix {.unnumbered}
+
+```{r}
+#| label: copo-mapping-matrix
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+copo_raw <- read_workbook_sheet(cf_sheet("course_info"), range = cf_range("copo_mapping"))
+copo_long <- NULL
+if (is.null(copo_raw)) {
+  notify_workbook_missing()
+} else {
+  copo_long <- as.data.frame(copo_raw)
+  if (ncol(copo_long) != 4L) stop("CO-PO mapping must contain four columns")
+  names(copo_long) <- c("CO", "PO", "Level", "Justification")
+  copo_long$CO <- trimws(as.character(copo_long$CO))
+  copo_long$PO <- trimws(as.character(copo_long$PO))
+  copo_long <- copo_long[!is.na(copo_long$CO) & nzchar(copo_long$CO) &
+                           !is.na(copo_long$PO) & nzchar(copo_long$PO), , drop = FALSE]
+  copo_long$Level <- trimws(as.character(copo_long$Level))
+  copo_long$Level[is.na(copo_long$Level) |
+                    toupper(copo_long$Level) %in% c("", "-", "NA", "N/A")] <- "-"
+
+  if (nrow(copo_long)) {
+    cos <- unique(copo_long$CO)
+    pos <- unique(copo_long$PO)
+    po_number <- suppressWarnings(as.integer(gsub("\\D", "", pos)))
+    pos <- pos[order(po_number, pos, na.last = TRUE)]
+    mat <- matrix("-", nrow = length(cos), ncol = length(pos), dimnames = list(cos, pos))
+    for (i in seq_len(nrow(copo_long))) mat[copo_long$CO[i], copo_long$PO[i]] <- copo_long$Level[i]
+    copo_df <- data.frame(CO = rownames(mat), mat, check.names = FALSE, row.names = NULL)
+    names(copo_df) <- c("CO", pos)
+    averages <- vapply(pos, function(po) {
+      x <- suppressWarnings(as.numeric(mat[, po]))
+      if (all(is.na(x))) "-" else sprintf("%.2f", mean(x, na.rm = TRUE))
+    }, character(1))
+    avg_row <- as.data.frame(as.list(c("Average", unname(averages))), check.names = FALSE)
+    names(avg_row) <- names(copo_df)
+    copo_df <- rbind(copo_df, avg_row)
+
+    if (knitr::pandoc_to("docx")) {
+      ft <- flextable::flextable(copo_df) |>
+        flextable::theme_booktabs() |>
+        flextable::bold(part = "header") |>
+        flextable::bold(i = nrow(copo_df), part = "body") |>
+        flextable::align(align = "center", part = "all") |>
+        flextable::fontsize(size = 9, part = "all") |>
+        flextable::valign(valign = "center", part = "all") |>
+        flextable::set_table_properties(layout = "autofit", opts_word = list(repeat_headers = TRUE, split = FALSE))
+      flextable::flextable_to_rmd(ft)
+    } else if (knitr::is_latex_output()) {
+      # Non-floating longtable, no table[!h] wrapper or tabular* rewrite.
+      tbl <- kableExtra::kbl(copo_df, format = "latex", booktabs = TRUE,
+                              longtable = TRUE, align = rep("c", ncol(copo_df))) |>
+        kableExtra::kable_styling(latex_options = c("repeat_header", "striped"),
+                                  stripe_color = "gray!10", font_size = 9, full_width = FALSE) |>
+        kableExtra::row_spec(nrow(copo_df), bold = TRUE)
+      cat(as.character(tbl), "\n\n", sep = "")
+    } else {
+      tbl <- kableExtra::kbl(copo_df, format = "html", align = rep("c", ncol(copo_df))) |>
+        kableExtra::kable_styling(bootstrap_options = c("striped", "bordered"), full_width = FALSE) |>
+        kableExtra::row_spec(nrow(copo_df), bold = TRUE)
+      cat(as.character(tbl), "\n\n", sep = "")
+    }
+    cat("\n\nMapping scale: 1 = Slight (low), 2 = Moderate (medium), ",
+        "3 = Substantial (high); - = Not mapped. ",
+        "PO-wise averages exclude unmapped values.\n\n", sep = "")
+  }
+}
+```
+
+{{< pagebreak >}}
+
+### CO-PO Mapping Justification {.unnumbered}
+
+```{r}
+#| label: copo-mapping-justification
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+if (is.null(copo_long)) {
+  notify_workbook_missing()
+} else {
+  just <- copo_long
+  just$Level <- trimws(as.character(just$Level))
+  just$Justification <- trimws(as.character(just$Justification))
+  valid <- !is.na(just$Level) & !toupper(just$Level) %in% c("", "-", "NA", "N/A") &
+           !is.na(just$Justification) & !toupper(just$Justification) %in% c("", "-", "NA", "N/A")
+  just <- just[valid, , drop = FALSE]
+
+  for (co in unique(just$CO)) {
+    df <- just[just$CO == co, c("PO", "Level", "Justification"), drop = FALSE]
+    names(df) <- c("PO", "Level", "Mapping Justification")
+    rownames(df) <- NULL
+    suffix <- sub(".*\\.", "", co)
+    heading <- if (grepl("^[0-9]+$", suffix)) {
+      paste0(co, " (CO", suffix, ") Mapping Statements")
+    } else paste0(co, " Mapping Statements")
+    cat("\n\n#### ", heading, " {.unnumbered}\n\n", sep = "")
+
+    if (knitr::pandoc_to("docx")) {
+      ft <- flextable::flextable(df) |>
+        flextable::theme_booktabs() |>
+        flextable::bold(part = "header") |>
+        flextable::fontsize(size = 9, part = "all") |>
+        flextable::align(j = 1:2, align = "center", part = "all") |>
+        flextable::valign(valign = "center", part = "all") |>
+        flextable::width(j = 1, width = 0.55) |>
+        flextable::width(j = 2, width = 0.55) |>
+        flextable::width(j = 3, width = 4.75) |>
+        flextable::set_table_properties(layout = "fixed", opts_word = list(repeat_headers = TRUE, split = FALSE))
+      flextable::flextable_to_rmd(ft)
+    } else if (knitr::is_latex_output()) {
+      tbl <- kableExtra::kbl(df, format = "latex", booktabs = TRUE,
+                              longtable = TRUE, align = c("c", "c", "l")) |>
+        kableExtra::kable_styling(latex_options = c("repeat_header", "striped"),
+                                  stripe_color = "gray!12", font_size = 9, full_width = FALSE) |>
+        kableExtra::column_spec(1, width = "0.55in") |>
+        kableExtra::column_spec(2, width = "0.55in") |>
+        kableExtra::column_spec(3, width = "4.75in")
+      cat(as.character(tbl), "\n\n", sep = "")
+    } else {
+      tbl <- kableExtra::kbl(df, format = "html", align = c("c", "c", "l")) |>
+        kableExtra::kable_styling(bootstrap_options = c("striped", "bordered"), full_width = FALSE)
+      cat(as.character(tbl), "\n\n", sep = "")
+    }
+  }
+}
+```
+
+## (b) Evaluation Scheme {.unnumbered}
+
+```{r}
+#| label: evaluation-scheme
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-align: center
+#| out-width: 90%
+
+# Schema helpers must already be loaded by the setup chunk.
+course_info <- read_workbook_sheet(
+  cf_sheet("course_info")
+)
+
+if (is.null(course_info) || nrow(course_info) == 0L) {
+  stop("Course information worksheet is missing or empty.")
+}
+
+# Extract evaluation scheme path
+image_path <- trimws(as.character(
+  course_info[["Evaluation Scheme Path"]][1]
+))
+
+if (is.na(image_path) || !nzchar(image_path)) {
+  stop("Evaluation Scheme Path is empty.")
+}
+
+# Normalize Windows separators and leading ./
+image_path <- gsub("\\\\", "/", image_path)
+image_path <- sub("^\\./", "", image_path)
+
+# Resolve relative to project root
+if (!file.exists(image_path)) {
+  image_path <- file.path(get_project_root(), image_path)
+}
+
+if (!file.exists(image_path)) {
+  stop("Evaluation scheme image not found: ", image_path)
+}
+
+knitr::include_graphics(
+  normalizePath(image_path, winslash = "/")
+)
+```
+
+## (c) AKTU Syllabus {.unnumbered}
+
+```{r}
+#| label: aktu-syllabus
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-align: center
+#| out-width: 90%
+
+# Reuse course_info from the preceding chunk
+
+image_path <- trimws(as.character(
+  course_info[["AKTU Syllabus Path"]][1]
+))
+
+if (is.na(image_path) || !nzchar(image_path)) {
+  stop("AKTU Syllabus Path is empty.")
+}
+
+image_path <- gsub("\\\\", "/", image_path)
+image_path <- sub("^\\./", "", image_path)
+
+if (!file.exists(image_path)) {
+  image_path <- file.path(get_project_root(), image_path)
+}
+
+if (!file.exists(image_path)) {
+  stop("AKTU syllabus image not found: ", image_path)
+}
+
+knitr::include_graphics(
+  normalizePath(image_path, winslash = "/")
+)
+```
+
+{{< signature >}}

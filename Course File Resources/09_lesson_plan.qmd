@@ -1,0 +1,140 @@
+---
+title: "Lesson Plan"
+---
+
+```{r}
+#| label: lesson-plan-table
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+# Only the general workbook helper is used for cf_sheet(), cf_range(),
+# and read_workbook_sheet(). No _data_helpers_course_tables dependency.
+source(file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"))
+
+# Excel columns A:I; select B, C, D, E, G, H.
+lesson_raw <- read_workbook_sheet(
+  cf_sheet("lesson_plan"),
+  range = cf_range("lesson_plan"),
+  col_names = FALSE
+)
+
+if (is.null(lesson_raw)) {
+  notify_workbook_missing()
+} else {
+  if (ncol(lesson_raw) < 8L) stop("Lesson Plan range must contain at least eight columns (A:H)")
+  lesson_df <- as.data.frame(lesson_raw[, c(2, 3, 4, 5, 7, 8), drop = FALSE])
+  names(lesson_df) <- c("Lec. No.", "CO", "Points to be Covered",
+                        "Teaching Pedagogy", "Planned Date", "Actual Delivery")
+  valid <- !is.na(lesson_df[["Lec. No."]]) &
+    nzchar(trimws(as.character(lesson_df[["Lec. No."]])))
+  lesson_df <- lesson_df[valid, , drop = FALSE]
+  rownames(lesson_df) <- NULL
+
+  format_date <- function(x) {
+    if (inherits(x, "Date") || inherits(x, "POSIXt")) {
+      y <- format(x, "%d-%m-%Y")
+    } else {
+      y <- as.character(x)
+    }
+    y[is.na(y)] <- ""
+    y
+  }
+  lesson_df[["Planned Date"]] <- format_date(lesson_df[["Planned Date"]])
+  lesson_df[["Actual Delivery"]] <- format_date(lesson_df[["Actual Delivery"]])
+  lesson_df[] <- lapply(lesson_df, function(x) {
+    x <- as.character(x)
+    x[is.na(x)] <- ""
+    x
+  })
+
+  # Consistent alternating light-grey rows across DOCX, PDF, and HTML.
+  stripe_hex <- "#E0E0E0"
+
+  if (knitr::pandoc_to("docx")) {
+    ft <- flextable::flextable(lesson_df) |>
+      flextable::theme_booktabs() |>
+      flextable::bg(i = seq(2L, nrow(lesson_df), by = 2L),
+                    bg = stripe_hex, part = "body") |>
+      flextable::bold(part = "header") |>
+      flextable::fontsize(size = 9, part = "all") |>
+      flextable::padding(padding = 3, part = "all") |>
+      flextable::valign(valign = "center", part = "all") |>
+      flextable::align(j = c(1, 2, 5, 6), align = "center", part = "all") |>
+      flextable::align(j = c(3, 4), align = "left", part = "all") |>
+      flextable::width(j = 1, width = 0.45) |>
+      flextable::width(j = 2, width = 0.45) |>
+      flextable::width(j = 3, width = 2.45) |>
+      flextable::width(j = 4, width = 1.25) |>
+      flextable::width(j = 5, width = 0.75) |>
+      flextable::width(j = 6, width = 0.75) |>
+      flextable::set_table_properties(
+        layout = "fixed",
+        opts_word = list(repeat_headers = TRUE, split = FALSE)
+      )
+    flextable::flextable_to_rmd(ft)
+
+  } else if (knitr::is_latex_output()) {
+
+  # Longtable with horizontally and vertically centered cells
+  tbl <- kableExtra::kbl(
+    lesson_df,
+    format = "latex",
+    booktabs = TRUE,
+    longtable = TRUE,
+    align = rep("c", 6)
+  ) |>
+    kableExtra::kable_styling(
+      latex_options = c("repeat_header", "striped"),
+      stripe_color = "gray!12",
+      font_size = 9,
+      full_width = FALSE
+    ) |>
+    kableExtra::column_spec(
+  1, width = "0.45in",
+  latex_column_spec = "C{0.45in}"
+) |>
+    kableExtra::column_spec(
+      2, width = "0.45in",
+      latex_column_spec = "C{0.45in}"
+    ) |>
+    kableExtra::column_spec(
+      3, width = "2.45in",
+      latex_column_spec = "L{2.25in}"
+    ) |>
+    kableExtra::column_spec(
+      4, width = "1.25in",
+      latex_column_spec = "L{1.45in}"
+    ) |>
+    kableExtra::column_spec(
+      5, width = "0.75in",
+      latex_column_spec = "C{0.75in}"
+    ) |>
+    kableExtra::column_spec(
+      6, width = "0.75in",
+      latex_column_spec = "C{0.75in}"
+    )
+
+  cat("\\begingroup\n")
+  cat("\\setlength{\\tabcolsep}{2pt}\n")
+  cat(as.character(tbl), "\n", sep = "")
+  cat("\\endgroup\n\n")
+  } else {
+    tbl <- kableExtra::kbl(
+      lesson_df, format = "html", align = c("c", "c", "l", "l", "c", "c")
+    ) |>
+      kableExtra::kable_styling(
+        bootstrap_options = c("striped", "bordered", "condensed"),
+        full_width = FALSE
+      ) |>
+      kableExtra::row_spec(
+        row = seq(2L, nrow(lesson_df), by = 2L),
+        background = stripe_hex
+      )
+    cat(as.character(tbl), "\n\n", sep = "")
+  }
+}
+```
+{{< signature >}}

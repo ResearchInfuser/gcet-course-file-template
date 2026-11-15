@@ -1,0 +1,11 @@
+---
+title: "Quiz Bank (MCQs)"
+---
+
+_The workbook does not include a quiz/MCQ bank sheet yet. Add the CO-wise MCQ bank here (or add a `Quiz_Bank` sheet to the workbook with columns such as `CO`, `Unit`, `Question`, `Options`, `Answer`, and bind it the same way as the other tables in this course file)._
+
+### Unit-wise / CO-wise MCQ List {.unnumbered}
+
+| S. No. | CO | Unit | Question | Options (A/B/C/D) | Correct Answer |
+|---|---|---|---|---|---|
+|  |  |  |  |  |  |
