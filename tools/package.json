@@ -1,0 +1,11 @@
+{
+  "name": "course-file-template-tools",
+  "private": true,
+  "description": "Dev utilities for the Course File Quarto template (not required to render the course file itself).",
+  "scripts": {
+    "dump-outline": "node dump_outline.js"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  }
+}

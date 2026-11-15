@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Render Course File (from Excel Config)",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "tools/render_course_file.ps1", "-Format", "${input:courseFileFormat}"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": [],
+      "options": { "cwd": "${workspaceFolder}" },
+      "detail": "Prompts for output format (PDF/DOCX); profile is always resolved from the workbook's 0.CourseFile_Config sheet."
+    },
+    {
+      "label": "Quarto: Render (Manual Profile Override)",
+      "type": "shell",
+      "command": "quarto",
+      "args": ["render", "--to", "${input:courseFileFormat}", "--profile", "${input:courseFileProfile}"],
+      "group": "build",
+      "problemMatcher": [],
+      "options": { "cwd": "${workspaceFolder}" },
+      "detail": "Advanced/debugging: force a specific profile and format, ignoring the workbook's Config sheet."
+    }
+  ],
+  "inputs": [
+    {
+      "id": "courseFileFormat",
+      "type": "pickString",
+      "description": "Output format to render",
+      "options": ["gcet-course-file-pdf", "docx"],
+      "default": "gcet-course-file-pdf"
+    },
+    {
+      "id": "courseFileProfile",
+      "type": "pickString",
+      "description": "Profile to render (overrides the workbook's Config sheet)",
+      "options": ["course-coordinator", "subject-teacher", "laboratory-course"],
+      "default": "course-coordinator"
+    }
+  ]
+}
