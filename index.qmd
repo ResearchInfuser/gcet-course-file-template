@@ -1,0 +1,25 @@
+---
+title: "{{< meta index-chapter-title >}}"
+---
+
+<!-- This file doubles as the book's first real chapter so that Quarto's
+book-project requirement for a home page (index.qmd) does not force an
+extra, visually blank chapter/page. The title and included content are
+resolved per active profile (see index-chapter-title in
+_quarto-course-coordinator.yml / _quarto-subject-teacher.yml /
+_quarto-laboratory-course.yml).
+
+NOTE: Quarto expands {{< include >}} shortcodes BEFORE knitr parses chunk
+labels, so the same included file must not appear in more than one
+when-profile block here (even if the blocks target different profiles) —
+that creates a duplicate chunk-label error at render time. Prefer
+unless-profile to share one include across every profile except one, as
+below, rather than repeating the include per profile. -->
+
+::: {.content-visible unless-profile="subject-teacher"}
+{{< include "Course File Resources/03_quality_policy.qmd" >}}
+:::
+
+::: {.content-visible when-profile="subject-teacher"}
+{{< include "Course File Resources/06_faculty_time_table.qmd" >}}
+:::

@@ -1,0 +1,19 @@
+book:
+  chapters:
+    - index.qmd
+    - "Course File Resources/07_student_list.qmd"
+    - "Course File Resources/08_course_information.qmd"
+    - "Course File Resources/09_lesson_plan.qmd"
+    - "Course File Resources/17_co_assessment_plan.qmd"
+    - "Course File Resources/18_co_attainment.qmd"
+    - "Course File Resources/19_slow_fast_learners.qmd"
+    - "Course File Resources/20_innovative_tl_practices.qmd"
+    - "Course File Resources/21_attendance_record.qmd"
+    - "Course File Resources/22_sample_evaluated_sheets.qmd"
+    - "Course File Resources/23_lecture_notes.qmd"
+    - "Course File Resources/24_student_feedback_survey.qmd"
+
+# index.qmd embeds this profile's first real chapter directly (see
+# index.qmd) so that no separate placeholder chapter/page is needed to
+# satisfy Quarto's book "home page" requirement.
+index-chapter-title: "Faculty Time Table"

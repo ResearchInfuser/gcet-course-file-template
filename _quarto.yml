@@ -1,0 +1,120 @@
+project:
+  type: book
+  output-dir: "Course File"
+  # Regenerates _metadata.yml from the workbook's Config sheet before every
+  # render (see tools/generate_coursefile_metadata.R and Course File
+  # Resources/_data_helpers.R::read_course_config()). Quarto re-reads
+  # project metadata after pre-render scripts run, and automatically merges
+  # in any _metadata.yml found at the project root (directory-level
+  # metadata), so book.title/subtitle and every coursefile.* display value
+  # are sourced from the workbook automatically -- no metadata-files entry
+  # needed (and "project.metadata-files" is not accepted for book-type
+  # projects in current Quarto versions; _metadata.yml is the correct,
+  # version-safe mechanism here).
+  pre-render: "tools/generate_coursefile_metadata.R"
+
+book:
+  date-format: "D MMMM YYYY"
+  search: true
+  # author/title/subtitle are intentionally NOT set here — they are generated
+  # from the workbook's Config sheet into _metadata.yml (auto-discovered by
+  # Quarto; see project.pre-render above). Edit the Excel Config sheet instead.
+
+# Chapter lists are defined per-profile (see _quarto-course-coordinator.yml,
+# _quarto-subject-teacher.yml and _quarto-laboratory-course.yml) based on the
+# Check_List sheet in the workbook, which marks which sections each
+# course-file type needs. Render with `quarto render --profile
+# subject-teacher` to build the reduced Subject Teacher variant, `quarto
+# render --profile laboratory-course` for the Laboratory Course variant, or
+# `quarto render` (or `--profile course-coordinator`) for the full Course
+# Coordinator variant. Or just run `Rscript tools/render_course_file.R`,
+# which resolves which profile to use from the workbook's Config sheet's
+# "subject-type" (Theory/Lab) + "faculty-role" (Course Coordinator/Subject
+# Faculty/Laboratory Faculty) values automatically -- see
+# resolve_coursefile_profile() in Course File Resources/_data_helpers.R.
+profile:
+  group:
+    - [course-coordinator, subject-teacher, laboratory-course]
+  default: course-coordinator
+
+coursefile:
+  # Per-course display values (institution, subject-name, course-code,
+  # faculty-name, section-name, academic-session, ...) are NOT set here.
+  # They live in the "0.CourseFile_Config" sheet of the workbook and are
+  # merged in automatically via project.pre-render (which regenerates the
+  # project's auto-discovered _metadata.yml) above. Edit that Excel sheet,
+  # not this file, to adapt this template to a new course — see README.md.
+  #
+  # What IS set here are the institute/department-wide values, which stay
+  # the same for every course. A Config-sheet row with the same key
+  # overrides any of them for one course.
+  logo: "_extensions/gcet-course-file/img/gcet_logo.png"
+  # Cover page: the line above the institution name, and the programme line
+  # above the subject name. Remove a key to drop that line.
+  institution-group: "Galgotias Educational Institutions"
+  programme: "Master of Computer Applications"
+  # Running page header and footer. These three are optional: remove one and
+  # the header/footer uses the Config sheet's "institution" (uppercased),
+  # "institution-address" or "department" value instead.
+  header-institution: "GALGOTIAS COLLEGE OF ENGINEERING & TECHNOLOGY"
+  header-address: "1, Knowledge Park II, Greater Noida -- 201013 (UP) INDIA"
+  footer-text: "Department of Computer Applications (MCA)"
+
+  # ---------------------------------------------------------------------
+  # Template data-source schema: this is the ONLY place that should name a
+  # worksheet or a cell range or a Register column header (the workbook
+  # filename itself is auto-detected — see get_workbook_path() in
+  # Course File Resources/_data_helpers.R — as the one .xlsx/.xlsm file
+  # inside `workbook_folder` below). Course File Resources/_data_helpers.R
+  # and every chapter read these values via
+  # cf_sheet()/cf_range()/get_register_columns() instead of hardcoding
+  # sheet/column names, so this one codebase can generate a course file for
+  # ANY course: to reuse it for a new course, copy this project, replace
+  # the workbook file, fill in its "0.CourseFile_Config" sheet, and update
+  # this `schema` block only if the new workbook's sheet/column layout
+  # differs from what's listed below. Run `Rscript tools/check_workbook.R`
+  # after swapping the workbook to verify every sheet/column it references
+  # actually exists before rendering.
+  schema:
+    # The folder (relative to the project root) holding the course workbook.
+    # Whatever single .xlsx/.xlsm file is in it is used automatically.
+    workbook_folder: "Course Workbook"
+    sheets:
+      course_config: "0.CourseFile_Config"
+      check_list: "Check_List"
+      register: "Register"
+      quality_policy: "3.Quality_Policy"
+      institute_vision_mission: "4.Inst_Vision_&_Mission"
+      department_vision_mission: "5.Deptt_Vision_&_Mission"
+      faculty_time_table: "6.Faculty_TimeTable"
+      student_list: "7.Student_List"
+      course_info: "8.Course_Info"
+      lesson_plan: "9.Lesson_Plan"
+    ranges:
+      course_header: "A1:D2"
+      co_table: "A5:C10"
+      copo_mapping: "A12:D52"
+      lesson_plan: "A7:I51"
+    # The Register sheet's required column headers are mandated by the
+    # template itself (required_register_columns in Course File
+    # Resources/_data_helpers.R), so they are not listed here. Only if a
+    # workbook's header text differs, override that one key, e.g.:
+    # register_columns:
+    #   student_name: "Name of Student"
+
+format:
+  gcet-course-file-pdf:
+    # Printing/binding layout: use "twoside" for double-sided printing
+    # (mirrored inner/outer margins, blank pages inserted so chapters start
+    # on an odd/right-hand page) or "oneside" for single-sided printing
+    # (symmetric margins, no inserted blank pages).
+    classoption:
+      - oneside
+      - gcet-no-page-numbers
+      - gcet-blank-toc-pages
+  docx:
+    toc: true
+    number-sections: true
+
+
+editor: source

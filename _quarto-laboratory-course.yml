@@ -1,0 +1,22 @@
+book:
+  chapters:
+    - index.qmd
+    - "Course File Resources/04_institute_vision_mission.qmd"
+    - "Course File Resources/05_department_vision_mission.qmd"
+    - "Course File Resources/L06_lab_course_information.qmd"
+    - "Course File Resources/L07_lab_schedule.qmd"
+    - "Course File Resources/06_faculty_time_table.qmd"
+    - "Course File Resources/07_student_list.qmd"
+    - "Course File Resources/L10_list_of_experiments.qmd"
+    - "Course File Resources/L11_additional_experiment.qmd"
+    - "Course File Resources/L12_laboratory_manual.qmd"
+    - "Course File Resources/L13_continuous_evaluation_sheet.qmd"
+    - "Course File Resources/21_attendance_record.qmd"
+    - "Course File Resources/22_sample_evaluated_sheets.qmd"
+    - "Course File Resources/L16_co_attainment_lab.qmd"
+    - "Course File Resources/L17_course_exit_survey.qmd"
+
+# index.qmd embeds this profile's first real chapter directly (see
+# index.qmd) so that no separate placeholder chapter/page is needed to
+# satisfy Quarto's book "home page" requirement.
+index-chapter-title: "Quality Policy"
