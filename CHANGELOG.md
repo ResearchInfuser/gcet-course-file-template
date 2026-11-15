@@ -9,6 +9,11 @@ What counts as a breaking change for this template is described in
 
 ## [Unreleased]
 
+### Added
+
+- Preview section in the README with title page and table of contents
+  screenshots for all three variants (`docs/screenshots/`).
+
 ## [0.1.0] - 2026-11-15
 
 First public release.

@@ -19,6 +19,17 @@ Word document) directly from **one Excel workbook**.
 > admission numbers, attendance, marks and faculty names in the demo
 > workbook are generated, and every evidence image is a placeholder.
 
+## Preview
+
+The title page and table of contents of each variant, rendered from the
+demo data. Click a variant name to open its full sample PDF.
+
+| Variant | Title page | Table of contents |
+|---|---|---|
+| [**Course Coordinator**](sample-output/BMC101-Course-File-Dr-Demo-Faculty.pdf)<br>full theory file, 24 sections | <img src="docs/screenshots/course-coordinator-title-page.png" alt="Course Coordinator course file: title page" width="300"> | <img src="docs/screenshots/course-coordinator-toc.png" alt="Course Coordinator course file: table of contents" width="300"> |
+| [**Subject Teacher**](sample-output/BMC101-Subject-Teacher-Course-File-Dr-Demo-Faculty.pdf)<br>reduced theory file, 14 sections | <img src="docs/screenshots/subject-teacher-title-page.png" alt="Subject Teacher course file: title page" width="300"> | <img src="docs/screenshots/subject-teacher-toc.png" alt="Subject Teacher course file: table of contents" width="300"> |
+| [**Laboratory Course**](sample-output/BMC101-Laboratory-Course-File-Dr-Demo-Faculty.pdf)<br>laboratory file, 17 sections | <img src="docs/screenshots/laboratory-course-title-page.png" alt="Laboratory Course course file: title page" width="300"> | <img src="docs/screenshots/laboratory-course-toc.png" alt="Laboratory Course course file: table of contents" width="300"> |
+
 ## Quick start
 
 1. **Install the prerequisites** (once per computer):
@@ -54,6 +65,7 @@ Course File Resources/           <- one .qmd per chapter, shared R helpers, and 
 _extensions/gcet-course-file/    <- the branded PDF document class/template
 tools/                           <- render wrapper, preflight validator, package installer
 sample-output/                   <- the three variants rendered from the demo data
+docs/screenshots/                <- title page and contents images used in this README
 Course File/                     <- GENERATED output (gitignored)
 _metadata.yml                    <- GENERATED each render from the workbook's Config sheet (gitignored)
 ```
