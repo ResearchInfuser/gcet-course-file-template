@@ -1,0 +1,7 @@
+---
+title: "Laboratory Manual"
+---
+
+Attach or embed the complete laboratory manual here — covering, for each experiment, the aim, apparatus/software required, theory/background, procedure, sample observations/code, precautions, and viva-voce questions.
+
+_Insert the laboratory manual (PDF pages or Markdown content) here._

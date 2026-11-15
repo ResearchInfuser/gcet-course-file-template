@@ -1,0 +1,15 @@
+---
+title: "CO Attainment & Analysis"
+---
+
+CO attainment for this laboratory course is computed once the Continuous Evaluation Sheet (see `L13_continuous_evaluation_sheet.qmd`) and end-semester laboratory examination marks are available, by combining direct assessment with the indirect Course Exit Survey (see `L17_course_exit_survey.qmd`).
+
+### Direct Attainment Input Data {.unnumbered}
+
+_Summarise the continuous evaluation and end-semester laboratory exam marks here, or source them live from the workbook once a laboratory marks sheet is added._
+
+### CO Attainment Summary {.unnumbered}
+
+| CO | Target Level | Direct Attainment | Indirect Attainment | Overall Attainment |
+|---|---|---|---|---|
+|  |  |  |  |  |

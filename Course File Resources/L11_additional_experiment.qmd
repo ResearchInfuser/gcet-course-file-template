@@ -1,0 +1,9 @@
+---
+title: "Additional Experiment (if any)"
+---
+
+List any experiment(s) conducted beyond the prescribed syllabus here (e.g., for enrichment, slow/fast learners, or industry relevance). Leave blank if not applicable.
+
+| Expt. No. | Title of Experiment | Purpose / Justification | CO Mapped |
+|---|---|---|---|
+|  |  |  |  |

@@ -1,0 +1,9 @@
+---
+title: "List of Experiments"
+---
+
+The table below lists all experiments prescribed in the syllabus for this laboratory course, along with the Course Outcome(s) each experiment addresses.
+
+| Expt. No. | Title of Experiment | CO Mapped | Page / Reference |
+|---|---|---|---|
+|  |  |  |  |

@@ -1,0 +1,9 @@
+---
+title: "Laboratory Schedule / Experiment Plan"
+---
+
+The table below records the planned sequence of laboratory experiments for the semester, along with planned and actual delivery dates. Update it as the semester progresses, or attach the signed laboratory schedule as a PDF/image.
+
+| S. No. | Experiment / Lab Session | CO | Planned Date | Actual Date | Remark |
+|---|---|---|---|---|---|
+|  |  |  |  |  |  |

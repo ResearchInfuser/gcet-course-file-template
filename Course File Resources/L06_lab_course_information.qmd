@@ -1,0 +1,86 @@
+---
+title: "Course Information Sheet (Laboratory)"
+---
+
+```{r}
+#| label: lab-course-header-info
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+library(knitr)
+library(kableExtra)
+
+source(file.path(dirname(knitr::current_input(dir = TRUE)), "_data_helpers.R"))
+
+# NOTE: this reads the same "course_info" schema sheet used by the theory
+# course information sheet (08_course_information.qmd). When this template is
+# used for a standalone laboratory course, point coursefile.schema.sheets in
+# _quarto.yml at that course's own Course Information sheet.
+render_course_header(cf_sheet("course_info"), cf_range("course_header"))
+```
+
+## (a) CO and CO-PO/PSO Mapping {.unnumbered}
+
+### Course Outcomes {.unnumbered}
+
+```{r}
+#| label: lab-co-table
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+render_co_table(cf_sheet("course_info"), cf_range("co_table"))
+```
+
+### CO-PO/PSO Mapping Matrix {.unnumbered}
+
+```{r}
+#| label: lab-copo-mapping-matrix
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+copo_long <- render_copo_mapping(cf_sheet("course_info"), cf_range("copo_mapping"))
+```
+
+{{< pagebreak >}}
+
+### CO-PO/PSO Mapping Justification {.unnumbered}
+
+```{r}
+#| label: lab-copo-mapping-justification
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+render_copo_justification(copo_long)
+```
+
+## (b) Evaluation Scheme {.unnumbered}
+
+_Attach/insert this laboratory course's evaluation scheme here (e.g., as an image or table) once finalised._
+
+## (c) Syllabus {.unnumbered}
+
+_Attach/insert the laboratory syllabus (AKTU/university-prescribed) here once finalised._
+
+## (d) Rubrics {.unnumbered}
+
+_Attach/insert the experiment evaluation rubrics here — the criteria used to grade each student's performance and lab record, and the marks associated with each performance level._
+
+| Criteria | Excellent | Good | Average | Poor |
+|---|---|---|---|---|
+|  |  |  |  |  |
+
+## (e) CO-Experiment Mapping {.unnumbered}
+
+The table below maps each prescribed experiment (see `L10_list_of_experiments.qmd`) to the Course Outcome(s) it attains.
+
+| Expt. No. | Title of Experiment | CO(s) Mapped |
+|---|---|---|
+|  |  |  |

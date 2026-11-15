@@ -1,0 +1,23 @@
+---
+title: "Course Exit Survey"
+---
+
+```{r}
+#| label: lab-course-exit-survey
+#| echo: false
+#| message: false
+#| warning: false
+#| results: asis
+
+# The survey screenshot is shared with the theory chapter
+# (24_student_feedback_survey.qmd): 24_student_feedback_survey/2.png.
+chapter_dir <- dirname(knitr::current_input(dir = TRUE))
+survey_image <- file.path("24_student_feedback_survey", "2.png")
+
+if (file.exists(file.path(chapter_dir, survey_image))) {
+  # Path relative to the QMD directory (an absolute path breaks the PDF build).
+  cat("![](<", survey_image, ">){width=95%}\n\n", sep = "")
+} else {
+  cat("*Course exit survey image not available. Add it as `Course File Resources/24_student_feedback_survey/2.png`.*\n\n")
+}
+```

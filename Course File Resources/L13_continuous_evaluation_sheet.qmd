@@ -1,0 +1,9 @@
+---
+title: "Continuous Evaluation Sheet"
+---
+
+The table below records the continuous (experiment-wise) evaluation marks awarded to each student, which feed into the direct CO attainment computation (see `L16_co_attainment_lab.qmd`).
+
+| S. No. | Student Name | Expt. 1 | Expt. 2 | Expt. 3 | ... | File / Record | Viva | Total |
+|---|---|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |  |  |
